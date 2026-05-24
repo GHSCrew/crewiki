@@ -1,7 +1,6 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useAuth } from "@/lib/auth-context";
-import { MOCK_TEAM } from "@/lib/data";
 import type { TeamMember, Role } from "@/types";
 
 const SIDES = ["port", "starboard", "cox"] as const;
@@ -9,7 +8,11 @@ const BOATS = ["8+", "4+", "4x", "2x", "1x", "4-"];
 
 export default function TeamPage() {
   const { user, canEdit } = useAuth();
-  const [members, setMembers] = useState<TeamMember[]>(MOCK_TEAM);
+  const [members, setMembers] = useState<TeamMember[]>([]);
+
+  useEffect(() => {
+    fetch("/api/team").then(r => r.json()).then(setMembers);
+  }, []);
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState({ name: "", role: "athlete" as Role, boatClass: "8+", seat: "", side: "port" as TeamMember["side"], email: "" });
 

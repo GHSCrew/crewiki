@@ -2,15 +2,18 @@
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth-context";
+import { useWikiStore } from "@/lib/store";
 import Sidebar from "@/components/layout/Sidebar";
 
 export default function WikiLayout({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
   const router = useRouter();
+  const hydrate = useWikiStore(s => s.hydrate);
 
   useEffect(() => {
     if (!loading && !user) router.replace("/login");
-  }, [user, loading, router]);
+    if (!loading && user) hydrate(user.id);
+  }, [user, loading, router, hydrate]);
 
   if (loading || !user) return (
     <div style={{ minHeight: "100vh", background: "var(--navy)", display: "flex", alignItems: "center", justifyContent: "center" }}>

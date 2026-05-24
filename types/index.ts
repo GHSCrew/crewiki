@@ -20,7 +20,6 @@ export interface WikiPage {
   createdAt: string;
   updatedAt: string;
   version: number;
-  tags: string[];
   youtubeLinks?: string[];
 }
 
@@ -78,29 +77,15 @@ export interface Notification {
     | "suggestion_rejected"
     | "suggestion_merged"
     | "comment_added"
-    | "page_updated"
-    | "assignment_posted";
+    | "page_updated";
   title: string;
   body: string;
   relatedId?: string;
-  relatedType?: "page" | "suggestion" | "comment" | "assignment";
+  relatedType?: "page" | "suggestion" | "comment";
   read: boolean;
   createdAt: string;
 }
 
-export interface Assignment {
-  id: string;
-  title: string;
-  description: string;
-  dueDate?: string;
-  createdBy: string;
-  createdByName: string;
-  type: "erg" | "reading" | "video" | "other";
-  googleClassroomLink?: string;
-  youtubeLink?: string;
-  targetRoles: Role[];
-  createdAt: string;
-}
 
 export interface TeamMember {
   id: string;

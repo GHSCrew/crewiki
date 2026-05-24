@@ -2,7 +2,12 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth-context";
-import { MOCK_USERS } from "@/lib/data";
+const DEMO_ACCOUNTS = [
+  { name: "Coach Rivera", email: "coach@crew.edu", role: "coach" },
+  { name: "Alex Chen", email: "alex@crew.edu", role: "captain" },
+  { name: "Sam Park", email: "sam@crew.edu", role: "athlete" },
+  { name: "Admin User", email: "admin@crew.edu", role: "admin" },
+] as const;
 
 export default function LoginPage() {
   const { login } = useAuth();
@@ -65,7 +70,7 @@ export default function LoginPage() {
               <label style={{ display: "block", fontSize: "0.8rem", fontWeight: 600, color: "var(--navy)", marginBottom: "0.4rem", textTransform: "uppercase", letterSpacing: "0.05em" }}>Password</label>
               <input
                 type="password" value={password} onChange={e => setPassword(e.target.value)}
-                placeholder="Any password (demo)" required
+                placeholder="Enter your password" required
                 style={{ width: "100%", padding: "0.7rem 1rem", border: "1.5px solid var(--border)", borderRadius: 8, fontSize: "1rem", fontFamily: "'DM Sans', sans-serif", outline: "none", transition: "border-color 0.2s" }}
                 onFocus={e => (e.target.style.borderColor = "var(--water)")}
                 onBlur={e => (e.target.style.borderColor = "var(--border)")}
@@ -83,8 +88,8 @@ export default function LoginPage() {
           <div style={{ marginTop: "1.5rem", paddingTop: "1.5rem", borderTop: "1px solid var(--border)" }}>
             <p style={{ fontSize: "0.75rem", color: "var(--text-muted)", marginBottom: "0.75rem", textTransform: "uppercase", letterSpacing: "0.06em", fontWeight: 600 }}>Demo accounts</p>
             <div style={{ display: "flex", flexDirection: "column", gap: "0.4rem" }}>
-              {MOCK_USERS.map(u => (
-                <button key={u.id} onClick={() => { setEmail(u.email); setPassword("demo"); }}
+              {DEMO_ACCOUNTS.map(u => (
+                <button key={u.email} onClick={() => { setEmail(u.email); setPassword("password123"); }}
                   style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0.5rem 0.75rem", background: "var(--cream)", border: "1px solid var(--border)", borderRadius: 6, cursor: "pointer", fontSize: "0.82rem", transition: "background 0.15s" }}
                   onMouseEnter={e => (e.currentTarget.style.background = "var(--gold-pale)")}
                   onMouseLeave={e => (e.currentTarget.style.background = "var(--cream)")}

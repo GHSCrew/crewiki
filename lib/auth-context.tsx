@@ -1,7 +1,6 @@
 "use client";
 import React, { createContext, useContext, useReducer, useEffect, useCallback } from "react";
 import type { User, Role } from "@/types";
-import { MOCK_USERS } from "@/lib/data";
 
 interface AuthContextType {
   user: User | null;
@@ -42,10 +41,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     dispatch({ type: "init", user: initialUser });
   }, []);
 
-  const login = useCallback(async (email: string, _password: string) => {
-    // Demo: match by email, any password accepted
-    const found = MOCK_USERS.find(u => u.email.toLowerCase() === email.toLowerCase());
-    if (!found) return { success: false, error: "No account found with that email." };
+  const login = useCallback(async (email: string, password: string) => {
+    const res = await fetch("/api/auth", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email, password }),
+    });
+    if (!res.ok) {
+      const { error } = await res.json() as { error: string };
+      return { success: false, error };
+    }
+    const found = await res.json() as User;
     dispatch({ type: "set_user", user: found });
     localStorage.setItem("crewwiki_user", JSON.stringify(found));
     return { success: true };

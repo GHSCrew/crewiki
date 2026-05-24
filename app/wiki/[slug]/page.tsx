@@ -262,7 +262,7 @@ export default function WikiPageView() {
 
   function handleSave() {
     if (!editMessage.trim()) return;
-    updatePage(page!.id, editContent, user!.id, user!.name, editMessage);
+    updatePage(page!.slug, editContent, user!.id, user!.name, user!.role, editMessage);
     setSaved(true);
     setTimeout(() => setSaved(false), 2000);
     setTab("read");
@@ -308,19 +308,14 @@ export default function WikiPageView() {
       <div style={{ fontSize: "0.8rem", color: "var(--text-muted)", marginBottom: "1rem" }}>
         <span style={{ cursor: "pointer", color: "var(--water)" }} onClick={() => router.push("/wiki")}>Wiki</span>
         <span style={{ margin: "0 0.4rem" }}>›</span>
-        <span>{page.folder}</span>
+        <span style={{ cursor: "pointer", color: "var(--water)" }} onClick={() => router.push(`/wiki/folder/${encodeURIComponent(page.folder)}`)}>{page.folder}</span>
         <span style={{ margin: "0 0.4rem" }}>›</span>
         <span style={{ color: "var(--text)" }}>{page.title}</span>
       </div>
 
       {/* Title row */}
-      <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: "1rem", marginBottom: "0.75rem" }}>
+      <div style={{ marginBottom: "0.75rem" }}>
         <h1 style={{ fontFamily: "'DM Serif Display', serif", fontSize: "2rem", color: "var(--navy)" }}>{page.title}</h1>
-        <div style={{ display: "flex", gap: "0.5rem", flexShrink: 0, marginTop: "0.4rem" }}>
-          {page.tags.map((t) => (
-            <span key={t} style={{ fontSize: "0.7rem", background: "var(--surface-raised)", color: "var(--text-muted)", padding: "3px 8px", borderRadius: 99, border: "1px solid var(--border)" }}>{t}</span>
-          ))}
-        </div>
       </div>
 
       {/* Meta bar */}

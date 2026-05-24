@@ -3,7 +3,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { useAuth } from "@/lib/auth-context";
 import { useWikiStore } from "@/lib/store";
-import { WIKI_FOLDERS } from "@/lib/data";
+import { WIKI_FOLDERS } from "@/lib/constants";
 
 export default function WikiHome() {
   const { user } = useAuth();
@@ -13,8 +13,7 @@ export default function WikiHome() {
   const filtered = query.trim()
     ? pages.filter(p =>
         p.title.toLowerCase().includes(query.toLowerCase()) ||
-        p.content.toLowerCase().includes(query.toLowerCase()) ||
-        p.tags.some(t => t.includes(query.toLowerCase()))
+        p.content.toLowerCase().includes(query.toLowerCase())
       )
     : [];
 
@@ -99,11 +98,13 @@ export default function WikiHome() {
               const fps = folderMap[folder] || [];
               if (fps.length === 0) return null;
               return (
-                <div key={folder} style={{ background: "white", border: "1px solid var(--border)", borderRadius: 14, padding: "1.25rem", transition: "box-shadow 0.2s" }}
-                  onMouseEnter={e => (e.currentTarget.style.boxShadow = "0 4px 20px rgba(0,0,0,0.07)")}
-                  onMouseLeave={e => (e.currentTarget.style.boxShadow = "none")}>
+                <div key={folder} style={{ background: "white", border: "1px solid var(--border)", borderRadius: 14, padding: "1.25rem", transition: "box-shadow 0.2s, border-color 0.15s" }}
+                  onMouseEnter={e => { e.currentTarget.style.boxShadow = "0 4px 20px rgba(0,0,0,0.07)"; e.currentTarget.style.borderColor = "var(--gold)"; }}
+                  onMouseLeave={e => { e.currentTarget.style.boxShadow = "none"; e.currentTarget.style.borderColor = "var(--border)"; }}>
                   <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "0.9rem" }}>
-                    <h3 style={{ fontFamily: "'DM Serif Display', serif", fontSize: "1.1rem", color: "var(--navy)" }}>{folder}</h3>
+                    <Link href={`/wiki/folder/${encodeURIComponent(folder)}`} style={{ textDecoration: "none" }}>
+                      <h3 style={{ fontFamily: "'DM Serif Display', serif", fontSize: "1.1rem", color: "var(--navy)", cursor: "pointer" }}>{folder}</h3>
+                    </Link>
                     <span style={{ fontSize: "0.7rem", background: "var(--surface-raised)", color: "var(--text-muted)", padding: "2px 8px", borderRadius: 99, fontWeight: 600 }}>{fps.length}</span>
                   </div>
                   <ul style={{ listStyle: "none", display: "flex", flexDirection: "column", gap: "0.4rem" }}>

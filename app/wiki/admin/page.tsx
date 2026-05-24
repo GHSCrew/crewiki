@@ -1,23 +1,22 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth-context";
-import { MOCK_USERS, MOCK_PAGES } from "@/lib/data";
-import type { User, Role } from "@/types";
+import type { User, WikiPage, Role } from "@/types";
 
 const ROLE_ORDER: Role[] = ["admin", "coach", "captain", "athlete"];
-
-const GDOC_PERMISSIONS = [
-  { id: "gd1", title: "Season Training Plan", url: "https://docs.google.com/document/d/example1", access: "editor" as const },
-  { id: "gd2", title: "Race Strategy Notes", url: "https://docs.google.com/document/d/example2", access: "viewer" as const },
-  { id: "gd3", title: "Erg Score Tracker", url: "https://docs.google.com/spreadsheets/d/example3", access: "editor" as const },
-];
 
 export default function AdminPage() {
   const { user, canEdit } = useAuth();
   const router = useRouter();
-  const [users, setUsers] = useState<User[]>(MOCK_USERS);
-  const [activeTab, setActiveTab] = useState<"users" | "pages" | "gdocs">("users");
+  const [users, setUsers] = useState<User[]>([]);
+  const [pages, setPages] = useState<WikiPage[]>([]);
+  const [activeTab, setActiveTab] = useState<"users" | "pages">("users");
+
+  useEffect(() => {
+    fetch("/api/users").then(r => r.json()).then(setUsers);
+    fetch("/api/pages").then(r => r.json()).then(setPages);
+  }, []);
 
   if (!canEdit) {
     return (
@@ -29,23 +28,28 @@ export default function AdminPage() {
     );
   }
 
-  function changeRole(userId: string, newRole: Role) {
+  async function changeRole(userId: string, newRole: Role) {
     setUsers(prev => prev.map(u => u.id !== userId ? u : { ...u, role: newRole }));
+    await fetch(`/api/users/${userId}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ role: newRole }),
+    });
   }
 
   return (
     <div style={{ padding: "2.5rem 3rem", maxWidth: 1000 }}>
       <div style={{ marginBottom: "2rem" }}>
         <h1 style={{ fontFamily: "'DM Serif Display', serif", fontSize: "2rem", color: "var(--navy)", marginBottom: "0.25rem" }}>Admin Panel</h1>
-        <p style={{ color: "var(--text-muted)", fontSize: "0.9rem" }}>Manage team members, page access, and linked documents.</p>
+        <p style={{ color: "var(--text-muted)", fontSize: "0.9rem" }}>Manage team members and wiki pages.</p>
       </div>
 
       {/* Tabs */}
       <div style={{ display: "flex", gap: "0.25rem", borderBottom: "2px solid var(--border)", marginBottom: "1.5rem" }}>
-        {(["users", "pages", "gdocs"] as const).map(t => (
+        {(["users", "pages"] as const).map(t => (
           <button key={t} onClick={() => setActiveTab(t)}
             style={{ padding: "0.5rem 1rem", border: "none", background: "none", cursor: "pointer", fontFamily: "'DM Sans', sans-serif", fontSize: "0.875rem", fontWeight: activeTab === t ? 600 : 400, color: activeTab === t ? "var(--navy)" : "var(--text-muted)", borderBottom: activeTab === t ? "2px solid var(--navy)" : "2px solid transparent", marginBottom: "-2px", textTransform: "capitalize" }}>
-            {t === "users" ? "Users & Roles" : t === "pages" ? "Pages" : "Google Docs"}
+            {t === "users" ? "Users & Roles" : "Pages"}
           </button>
         ))}
       </div>
@@ -110,7 +114,7 @@ export default function AdminPage() {
                 </tr>
               </thead>
               <tbody>
-                {MOCK_PAGES.map((p, i) => (
+                {pages.map((p, i) => (
                   <tr key={p.id} style={{ borderBottom: "1px solid var(--border)", background: i % 2 === 0 ? "white" : "var(--cream)" }}>
                     <td style={{ padding: "0.75rem 1rem", fontWeight: 600, fontSize: "0.875rem" }}>{p.title}</td>
                     <td style={{ padding: "0.75rem 1rem" }}><span style={{ fontSize: "0.72rem", background: "var(--navy)", color: "var(--gold-light)", padding: "2px 7px", borderRadius: 4 }}>{p.folder}</span></td>
@@ -128,32 +132,6 @@ export default function AdminPage() {
         </div>
       )}
 
-      {/* Google Docs */}
-      {activeTab === "gdocs" && (
-        <div className="fade-in">
-          <p style={{ fontSize: "0.82rem", color: "var(--text-muted)", marginBottom: "1rem" }}>
-            Linked Google Docs with permission levels. Coaches and captains have editor access; athletes receive viewer links.
-          </p>
-          <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
-            {GDOC_PERMISSIONS.map(doc => (
-              <div key={doc.id} style={{ background: "white", border: "1px solid var(--border)", borderRadius: 10, padding: "1rem 1.25rem", display: "flex", alignItems: "center", gap: "1rem" }}>
-                <span style={{ fontSize: "1.5rem" }}>📄</span>
-                <div style={{ flex: 1 }}>
-                  <div style={{ fontWeight: 600, fontSize: "0.9rem", color: "var(--navy)", marginBottom: "0.25rem" }}>{doc.title}</div>
-                  <span style={{ fontSize: "0.72rem", background: doc.access === "editor" ? "var(--gold-pale)" : "var(--surface-raised)", color: doc.access === "editor" ? "var(--navy)" : "var(--text-muted)", padding: "2px 8px", borderRadius: 99, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.04em" }}>{doc.access}</span>
-                </div>
-                <a href={doc.url} target="_blank" rel="noopener noreferrer"
-                  style={{ padding: "0.45rem 0.9rem", background: "#4285f4", color: "white", borderRadius: 7, fontSize: "0.8rem", fontWeight: 600, textDecoration: "none" }}>
-                  Open in Drive
-                </a>
-              </div>
-            ))}
-          </div>
-          <div style={{ marginTop: "1.25rem", padding: "1rem", background: "var(--surface-raised)", borderRadius: 8, fontSize: "0.82rem", color: "var(--text-muted)" }}>
-            💡 To grant edit access to specific team members, open the document in Google Drive and share with their crew.edu email address directly. Coach and Captain roles get editor access; Athlete role gets viewer access by default.
-          </div>
-        </div>
-      )}
     </div>
   );
 }
