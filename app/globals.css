@@ -63,6 +63,47 @@ code, pre, .mono {
 .wiki-content tr:nth-child(even) td { background: var(--surface-raised); }
 .wiki-content a { color: var(--water); text-decoration: underline; }
 .wiki-content hr { border: none; border-top: 1px solid var(--border); margin: 2rem 0; }
+.wiki-content del { text-decoration: line-through; color: var(--text-muted); }
+
+/* Wikilinks */
+.wiki-content a.wikilink { color: var(--water); text-decoration: none; border-bottom: 1px dashed rgba(42,111,168,0.45); }
+.wiki-content a.wikilink:hover { border-bottom-style: solid; }
+
+/* Task lists */
+.wiki-content ul.task-list { list-style: none; margin-left: 0.25rem; }
+.wiki-content li.task-open, .wiki-content li.task-done { padding-left: 0.25rem; }
+.wiki-content li.task-done { color: var(--text-muted); text-decoration: line-through; }
+
+/* Callout boxes (Quartz / Obsidian style) */
+.wiki-content .callout { border-radius: 8px; padding: 0.875rem 1rem 0.875rem 1.1rem; margin: 1.25rem 0; border-left: 4px solid var(--border); background: var(--surface-raised); }
+.wiki-content .callout-title { font-weight: 700; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 0.45rem; display: flex; align-items: center; gap: 0.4rem; }
+.wiki-content .callout-body > p:last-child { margin-bottom: 0; }
+.wiki-content .callout-note  { background: rgba(42,111,168,0.07); border-color: var(--water); }
+.wiki-content .callout-note  .callout-title { color: var(--water); }
+.wiki-content .callout-info  { background: rgba(42,111,168,0.07); border-color: var(--water); }
+.wiki-content .callout-info  .callout-title { color: var(--water); }
+.wiki-content .callout-tip   { background: rgba(26,102,65,0.07); border-color: #1a7a50; }
+.wiki-content .callout-tip   .callout-title { color: #1a7a50; }
+.wiki-content .callout-success { background: rgba(26,102,65,0.07); border-color: #1a7a50; }
+.wiki-content .callout-success .callout-title { color: #1a7a50; }
+.wiki-content .callout-warning { background: rgba(201,168,76,0.1); border-color: var(--gold); }
+.wiki-content .callout-warning .callout-title { color: #7a6000; }
+.wiki-content .callout-example { background: rgba(201,168,76,0.1); border-color: var(--gold); }
+.wiki-content .callout-example .callout-title { color: #7a6000; }
+.wiki-content .callout-danger  { background: rgba(153,26,26,0.07); border-color: #b03030; }
+.wiki-content .callout-danger  .callout-title { color: #b03030; }
+.wiki-content .callout-question { background: rgba(153,26,26,0.07); border-color: #b03030; }
+.wiki-content .callout-question .callout-title { color: #b03030; }
+.wiki-content .callout-quote { background: rgba(90,106,126,0.07); border-color: var(--text-muted); font-style: italic; }
+.wiki-content .callout-quote .callout-title { color: var(--text-muted); }
+
+/* Table of Contents */
+.toc { position: sticky; top: 2rem; }
+.toc-title { font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.1em; font-weight: 700; color: var(--text-muted); margin-bottom: 0.75rem; padding-left: 0.75rem; }
+.toc-link { display: block; font-size: 0.82rem; color: var(--text-muted); text-decoration: none; padding: 0.22rem 0 0.22rem 0.75rem; border-left: 2px solid transparent; line-height: 1.35; transition: color 0.15s, border-color 0.15s; }
+.toc-link:hover { color: var(--navy); border-left-color: var(--gold); }
+.toc-h1 { font-weight: 600; }
+.toc-h3 { padding-left: 1.5rem; font-size: 0.76rem; }
 
 /* Line highlighting */
 .line-row { display: flex; }
