@@ -3,11 +3,10 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth-context";
 import { useWikiStore } from "@/lib/store";
-import { WIKI_FOLDERS, MOCK_PAGES } from "@/lib/data";
+import { WIKI_FOLDERS } from "@/lib/constants";
 
 const NAV_ITEMS = [
   { href: "/wiki", label: "Home", icon: "⊞" },
-  { href: "/wiki/assignments", label: "Assignments", icon: "📋" },
   { href: "/wiki/suggestions", label: "Suggestions", icon: "✏️" },
   { href: "/wiki/team", label: "Team", icon: "⛵" },
   { href: "/wiki/notifications", label: "Notifications", icon: "🔔" },
@@ -27,7 +26,7 @@ export default function Sidebar() {
   function handleLogout() { logout(); router.push("/login"); }
 
   // Group pages by folder
-  const folderMap: Record<string, typeof MOCK_PAGES> = {};
+  const folderMap: Record<string, typeof pages> = {};
   pages.forEach(p => {
     if (!folderMap[p.folder]) folderMap[p.folder] = [];
     folderMap[p.folder].push(p);
@@ -97,7 +96,9 @@ export default function Sidebar() {
           if (folderPages.length === 0) return null;
           return (
             <div key={folder} style={{ marginBottom: "0.25rem" }}>
-              <div style={{ padding: "0.3rem 0.75rem", fontSize: "0.78rem", color: "rgba(255,255,255,0.45)", fontWeight: 600 }}>{folder}</div>
+              <Link href={`/wiki/folder/${encodeURIComponent(folder)}`} style={{ textDecoration: "none" }}>
+                <div style={{ padding: "0.3rem 0.75rem", fontSize: "0.78rem", fontWeight: 600, color: pathname === `/wiki/folder/${encodeURIComponent(folder)}` ? "var(--gold)" : "rgba(255,255,255,0.45)", cursor: "pointer" }}>{folder}</div>
+              </Link>
               {folderPages.map(p => {
                 const active = pathname === `/wiki/${p.slug}`;
                 return (

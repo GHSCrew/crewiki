@@ -1,0 +1,123 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+model User {
+  id           String   @id @default(cuid())
+  name         String
+  email        String   @unique
+  passwordHash String
+  role         String   @default("athlete")
+  avatarUrl    String?
+  joinedAt     String
+
+  comments      LineComment[]
+  suggestions   EditSuggestion[]
+  notifications Notification[]
+  versions      PageVersion[]
+  teamMember    TeamMember?
+}
+
+model WikiPage {
+  id           String @id @default(cuid())
+  slug         String @unique
+  title        String
+  content      String
+  folder       String
+  authorId     String
+  authorName   String
+  createdAt    String
+  updatedAt    String
+  version      Int    @default(1)
+  youtubeLinks String @default("[]")
+
+  versions    PageVersion[]
+  comments    LineComment[]
+  suggestions EditSuggestion[]
+}
+
+model PageVersion {
+  id         String @id @default(cuid())
+  pageId     String
+  content    String
+  authorId   String
+  authorName String
+  authorRole String
+  message    String
+  createdAt  String
+  version    Int
+
+  page   WikiPage @relation(fields: [pageId], references: [id], onDelete: Cascade)
+  author User     @relation(fields: [authorId], references: [id])
+}
+
+model LineComment {
+  id          String  @id @default(cuid())
+  pageId      String
+  lineNumber  Int
+  lineContent String
+  authorId    String
+  authorName  String
+  authorRole  String
+  body        String
+  createdAt   String
+  resolved    Boolean @default(false)
+
+  page   WikiPage @relation(fields: [pageId], references: [id], onDelete: Cascade)
+  author User     @relation(fields: [authorId], references: [id])
+}
+
+model EditSuggestion {
+  id               String  @id @default(cuid())
+  pageId           String
+  pageTitle        String
+  pageSlug         String
+  authorId         String
+  authorName       String
+  authorRole       String
+  originalContent  String
+  suggestedContent String
+  message          String
+  status           String  @default("open")
+  lineStart        Int?
+  lineEnd          Int?
+  createdAt        String
+  reviewedBy       String?
+  reviewedAt       String?
+  reviewNote       String?
+
+  page   WikiPage @relation(fields: [pageId], references: [id], onDelete: Cascade)
+  author User     @relation(fields: [authorId], references: [id])
+}
+
+model Notification {
+  id          String  @id @default(cuid())
+  userId      String
+  type        String
+  title       String
+  body        String
+  relatedId   String?
+  relatedType String?
+  read        Boolean @default(false)
+  createdAt   String
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model TeamMember {
+  id           String  @id @default(cuid())
+  userId       String? @unique
+  name         String
+  role         String
+  boatClass    String?
+  seat         String?
+  side         String?
+  email        String?
+  registeredAt String
+
+  user User? @relation(fields: [userId], references: [id])
+}
