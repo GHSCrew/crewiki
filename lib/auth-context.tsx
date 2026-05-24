@@ -1,5 +1,5 @@
 "use client";
-import React, { createContext, useContext, useState, useEffect, useCallback } from "react";
+import React, { createContext, useContext, useReducer, useEffect, useCallback } from "react";
 import type { User, Role } from "@/types";
 import { MOCK_USERS } from "@/lib/data";
 
@@ -17,29 +17,42 @@ const AuthContext = createContext<AuthContextType | null>(null);
 const EDIT_ROLES: Role[] = ["coach", "captain", "admin"];
 const ADMIN_ROLES: Role[] = ["admin"];
 
+type AuthState = { user: User | null; loading: boolean };
+type AuthAction =
+  | { type: "init"; user: User | null }
+  | { type: "set_user"; user: User | null };
+
+function authReducer(state: AuthState, action: AuthAction): AuthState {
+  switch (action.type) {
+    case "init": return { user: action.user, loading: false };
+    case "set_user": return { ...state, user: action.user };
+    default: return state;
+  }
+}
+
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [{ user, loading }, dispatch] = useReducer(authReducer, { user: null, loading: true });
 
   useEffect(() => {
+    let initialUser: User | null = null;
     try {
       const stored = localStorage.getItem("crewwiki_user");
-      if (stored) setUser(JSON.parse(stored));
+      if (stored) initialUser = JSON.parse(stored);
     } catch {}
-    setLoading(false);
+    dispatch({ type: "init", user: initialUser });
   }, []);
 
   const login = useCallback(async (email: string, _password: string) => {
     // Demo: match by email, any password accepted
     const found = MOCK_USERS.find(u => u.email.toLowerCase() === email.toLowerCase());
     if (!found) return { success: false, error: "No account found with that email." };
-    setUser(found);
+    dispatch({ type: "set_user", user: found });
     localStorage.setItem("crewwiki_user", JSON.stringify(found));
     return { success: true };
   }, []);
 
   const logout = useCallback(() => {
-    setUser(null);
+    dispatch({ type: "set_user", user: null });
     localStorage.removeItem("crewwiki_user");
   }, []);
 
