@@ -6,14 +6,18 @@ import Link from "next/link";
 
 export default function SuggestionsPage() {
   const { user, canEdit } = useAuth();
-  const { suggestions, updateSuggestionStatus } = useWikiStore();
+  const { suggestions, updateSuggestionStatus, updatePage } = useWikiStore();
   const [filter, setFilter] = useState<"all" | "open" | "approved" | "rejected" | "merged">("open");
   const [reviewNote, setReviewNote] = useState<Record<string, string>>({});
 
   const filtered = filter === "all" ? suggestions : suggestions.filter(s => s.status === filter);
 
-  function handleAction(id: string, action: "approved" | "rejected" | "merged") {
-    updateSuggestionStatus(id, action, user!.name, reviewNote[id] || "");
+  async function handleAction(id: string, action: "approved" | "rejected" | "merged") {
+    const s = suggestions.find(sg => sg.id === id)!;
+    await updateSuggestionStatus(id, action, user!.name, reviewNote[id] || "");
+    if (action === "merged") {
+      await updatePage(s.pageSlug, s.suggestedContent, user!.id, user!.name, user!.role, `Merged suggestion: ${s.message}`);
+    }
     setReviewNote(prev => ({ ...prev, [id]: "" }));
   }
 
@@ -79,12 +83,12 @@ export default function SuggestionsPage() {
           )}
 
           {/* Coach/captain actions */}
-          {canEdit && s.status === "open" && (
+          {canEdit && (s.status === "open" || s.status === "approved") && (
             <div style={{ display: "flex", gap: "0.5rem", marginTop: "0.75rem", flexWrap: "wrap", alignItems: "center" }}>
               <input value={reviewNote[s.id] || ""} onChange={e => setReviewNote(prev => ({ ...prev, [s.id]: e.target.value }))}
                 placeholder="Review note (optional)"
                 style={{ flex: 1, minWidth: 200, padding: "0.45rem 0.75rem", border: "1px solid var(--border)", borderRadius: 6, fontSize: "0.82rem", fontFamily: "'DM Sans', sans-serif", outline: "none" }} />
-              <button onClick={() => handleAction(s.id, "approved")} style={{ padding: "0.45rem 0.9rem", background: "#dff0e8", color: "#1a6641", border: "1px solid #b3d9c4", borderRadius: 6, fontWeight: 600, fontSize: "0.8rem", cursor: "pointer" }}>Approve</button>
+              {s.status === "open" && <button onClick={() => handleAction(s.id, "approved")} style={{ padding: "0.45rem 0.9rem", background: "#dff0e8", color: "#1a6641", border: "1px solid #b3d9c4", borderRadius: 6, fontWeight: 600, fontSize: "0.8rem", cursor: "pointer" }}>Approve</button>}
               <button onClick={() => handleAction(s.id, "merged")} style={{ padding: "0.45rem 0.9rem", background: "var(--navy)", color: "var(--gold)", border: "none", borderRadius: 6, fontWeight: 600, fontSize: "0.8rem", cursor: "pointer" }}>Merge</button>
               <button onClick={() => handleAction(s.id, "rejected")} style={{ padding: "0.45rem 0.9rem", background: "#fde8e8", color: "#991a1a", border: "1px solid #f5b8b8", borderRadius: 6, fontWeight: 600, fontSize: "0.8rem", cursor: "pointer" }}>Reject</button>
             </div>

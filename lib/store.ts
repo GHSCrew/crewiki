@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import type { WikiPage, EditSuggestion, LineComment, Notification, PageVersion } from "@/types";
+import type { WikiPage, EditSuggestion, LineComment, Notification, PageVersion, ViewMode } from "@/types";
 
 interface WikiStore {
   pages: WikiPage[];
@@ -8,6 +8,7 @@ interface WikiStore {
   notifications: Notification[];
   versions: PageVersion[];
   hydrated: boolean;
+  viewMode: ViewMode;
 
   hydrate: (userId?: string) => Promise<void>;
   getPage: (slug: string) => WikiPage | undefined;
@@ -18,6 +19,8 @@ interface WikiStore {
   resolveComment: (id: string) => Promise<void>;
   markNotificationRead: (id: string) => Promise<void>;
   markAllRead: (userId: string) => Promise<void>;
+  setViewMode: (m: ViewMode) => void;
+  fetchVersions: (slug: string) => Promise<void>;
   getVersions: (pageId: string) => PageVersion[];
   getPageComments: (pageId: string) => LineComment[];
   getOpenSuggestions: () => EditSuggestion[];
@@ -30,6 +33,7 @@ export const useWikiStore = create<WikiStore>((set, get) => ({
   notifications: [],
   versions: [],
   hydrated: false,
+  viewMode: "read",
 
   hydrate: async (userId?: string) => {
     if (get().hydrated) return;
@@ -102,6 +106,18 @@ export const useWikiStore = create<WikiStore>((set, get) => ({
       body: JSON.stringify({ userId }),
     });
     set(state => ({ notifications: state.notifications.map(n => n.userId !== userId ? n : { ...n, read: true }) }));
+  },
+
+  setViewMode: (m) => set({ viewMode: m }),
+
+  fetchVersions: async (slug) => {
+    const fetched: PageVersion[] = await fetch(`/api/pages/${slug}/versions`).then(r => r.json());
+    set(state => {
+      const page = state.pages.find(p => p.slug === slug);
+      if (!page) return {};
+      const others = state.versions.filter(v => v.pageId !== page.id);
+      return { versions: [...others, ...fetched] };
+    });
   },
 
   getVersions: (pageId) => get().versions.filter(v => v.pageId === pageId).sort((a, b) => b.version - a.version),

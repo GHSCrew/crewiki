@@ -1,14 +1,19 @@
 "use client";
 import { useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import { useAuth } from "@/lib/auth-context";
 import { useWikiStore } from "@/lib/store";
 import Sidebar from "@/components/layout/Sidebar";
+import WikiTopbar from "@/components/layout/WikiTopbar";
 
 export default function WikiLayout({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
   const router = useRouter();
+  const pathname = usePathname();
   const hydrate = useWikiStore(s => s.hydrate);
+  const NAMED_ROUTES = new Set(["suggestions", "team", "notifications", "admin", "folder"]);
+  const segment = pathname.split("/")[2];
+  const isArticlePage = !!segment && !NAMED_ROUTES.has(segment);
 
   useEffect(() => {
     if (!loading && !user) router.replace("/login");
@@ -24,9 +29,12 @@ export default function WikiLayout({ children }: { children: React.ReactNode }) 
   return (
     <div style={{ display: "flex", minHeight: "100vh" }}>
       <Sidebar />
-      <main style={{ flex: 1, overflowX: "hidden", minWidth: 0 }}>
-        {children}
-      </main>
+      <div style={{ flex: 1, display: "flex", flexDirection: "column", minWidth: 0 }}>
+        {isArticlePage && <WikiTopbar />}
+        <main style={{ flex: 1, overflowX: "hidden" }}>
+          {children}
+        </main>
+      </div>
     </div>
   );
 }

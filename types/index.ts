@@ -99,6 +99,8 @@ export interface TeamMember {
   registeredAt: string;
 }
 
+export type ViewMode = "read" | "comments" | "edit" | "suggest" | "blame" | "history";
+
 export type Permission = "view" | "suggest" | "edit" | "admin";
 
 export const ROLE_PERMISSIONS: Record<Role, Permission> = {

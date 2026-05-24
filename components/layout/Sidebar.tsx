@@ -1,4 +1,5 @@
 "use client";
+import { useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth-context";
@@ -22,30 +23,47 @@ export default function Sidebar() {
   const { user, logout, canEdit } = useAuth();
   const { notifications, pages } = useWikiStore();
   const unread = notifications.filter(n => n.userId === user?.id && !n.read).length;
+  const [collapsed, setCollapsed] = useState(false);
 
   function handleLogout() { logout(); router.push("/login"); }
 
-  // Group pages by folder
   const folderMap: Record<string, typeof pages> = {};
   pages.forEach(p => {
     if (!folderMap[p.folder]) folderMap[p.folder] = [];
     folderMap[p.folder].push(p);
   });
 
+  if (collapsed) {
+    return (
+      <aside style={{ width: 48, background: "var(--navy)", height: "100vh", position: "sticky", top: 0, display: "flex", flexDirection: "column", alignItems: "center", paddingTop: "0.75rem", flexShrink: 0, borderRight: "1px solid rgba(255,255,255,0.06)" }}>
+        <button
+          onClick={() => setCollapsed(false)}
+          title="Expand sidebar"
+          style={{ width: 32, height: 32, borderRadius: 7, background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.12)", color: "rgba(255,255,255,0.6)", cursor: "pointer", fontSize: "1rem", display: "flex", alignItems: "center", justifyContent: "center" }}
+        >›</button>
+      </aside>
+    );
+  }
+
   return (
     <aside style={{ width: 260, background: "var(--navy)", color: "white", height: "100vh", position: "sticky", top: 0, display: "flex", flexDirection: "column", flexShrink: 0 }}>
       {/* Brand */}
-      <Link href="/wiki" style={{ textDecoration: "none" }}>
-        <div style={{ padding: "1.25rem 1.25rem 1rem", borderBottom: "1px solid rgba(255,255,255,0.08)", display: "flex", alignItems: "center", gap: "0.75rem" }}>
+      <div style={{ padding: "1.25rem 1.25rem 1rem", borderBottom: "1px solid rgba(255,255,255,0.08)", display: "flex", alignItems: "center", gap: "0.75rem" }}>
+        <Link href="/wiki" style={{ textDecoration: "none", display: "flex", alignItems: "center", gap: "0.75rem", flex: 1, minWidth: 0 }}>
           <div style={{ width: 36, height: 36, background: "var(--gold)", borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
             <span style={{ fontSize: "1.1rem" }}>⛵</span>
           </div>
-          <div>
+          <div style={{ minWidth: 0 }}>
             <div style={{ fontFamily: "'DM Serif Display', serif", fontSize: "1.1rem", color: "white" }}>CrewWiki</div>
             <div style={{ fontSize: "0.7rem", color: "rgba(255,255,255,0.4)", marginTop: "0.05rem" }}>Team Knowledge Base</div>
           </div>
-        </div>
-      </Link>
+        </Link>
+        <button
+          onClick={() => setCollapsed(true)}
+          title="Collapse sidebar"
+          style={{ width: 26, height: 26, borderRadius: 6, background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.12)", color: "rgba(255,255,255,0.5)", cursor: "pointer", fontSize: "0.9rem", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}
+        >‹</button>
+      </div>
 
       {/* User pill */}
       {user && (
@@ -89,7 +107,6 @@ export default function Sidebar() {
           ))}
         </div>
 
-        {/* Folder tree */}
         <div style={{ fontSize: "0.7rem", color: "rgba(255,255,255,0.3)", textTransform: "uppercase", letterSpacing: "0.08em", fontWeight: 600, padding: "0 0.75rem", marginBottom: "0.5rem" }}>Content</div>
         {WIKI_FOLDERS.map(folder => {
           const folderPages = folderMap[folder] || [];

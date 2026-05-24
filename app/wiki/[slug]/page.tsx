@@ -1,11 +1,52 @@
 "use client";
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
+import { diffLines } from "diff";
 import { useAuth } from "@/lib/auth-context";
 import { useWikiStore } from "@/lib/store";
-import type { EditSuggestion } from "@/types";
+import type { EditSuggestion, PageVersion } from "@/types";
 
-type Tab = "read" | "comments" | "edit" | "suggest" | "history" | "blame";
+// ─── Blame ────────────────────────────────────────────────────────────────────
+
+type BlameInfo = { authorName: string; version: number; createdAt: string };
+
+function computeBlame(sortedVersions: PageVersion[], currentLines: string[]): BlameInfo[] {
+  if (sortedVersions.length === 0) return currentLines.map(() => ({ authorName: "Unknown", version: 1, createdAt: "" }));
+
+  const fallback: BlameInfo = { authorName: sortedVersions[0].authorName, version: sortedVersions[0].version, createdAt: sortedVersions[0].createdAt };
+  const blame: BlameInfo[] = currentLines.map(() => fallback);
+
+  for (let vi = 0; vi < sortedVersions.length; vi++) {
+    const prevContent = vi > 0 ? sortedVersions[vi - 1].content : "";
+    const currContent = sortedVersions[vi].content;
+    const vInfo: BlameInfo = { authorName: sortedVersions[vi].authorName, version: sortedVersions[vi].version, createdAt: sortedVersions[vi].createdAt };
+
+    // Collect positions (in currContent) of lines that were added in this version
+    const addedPositions = new Set<number>();
+    let pos = 0;
+    for (const change of diffLines(prevContent, currContent)) {
+      const count = change.count ?? 0;
+      if (change.added) {
+        for (let i = 0; i < count; i++) addedPositions.add(pos + i);
+        pos += count;
+      } else if (!change.removed) {
+        pos += count;
+      }
+    }
+
+    // Map added positions in this version's content to positions in the current content
+    const versionLines = currContent.split("\n");
+    const addedContent = new Set<string>();
+    addedPositions.forEach(p => { if (p < versionLines.length) addedContent.add(versionLines[p]); });
+
+    // Assign blame for matching lines in the current file
+    for (let j = 0; j < currentLines.length; j++) {
+      if (addedContent.has(currentLines[j])) blame[j] = vInfo;
+    }
+  }
+
+  return blame;
+}
 
 // ─── Markdown renderer ────────────────────────────────────────────────────────
 
@@ -217,7 +258,7 @@ export default function WikiPageView() {
   const params = useParams();
   const slug = params.slug as string;
   const { user, canEdit } = useAuth();
-  const { getPage, getVersions, getPageComments, addComment, resolveComment, updatePage, addSuggestion, suggestions } = useWikiStore();
+  const { getPage, getVersions, getPageComments, addComment, resolveComment, updatePage, addSuggestion, suggestions, viewMode, setViewMode, fetchVersions } = useWikiStore();
   const router = useRouter();
 
   const page = getPage(slug);
@@ -225,7 +266,12 @@ export default function WikiPageView() {
   const comments = getPageComments(page?.id ?? "");
   const pageSuggestions = suggestions.filter((s) => s.pageId === page?.id);
 
-  const [tab, setTab] = useState<Tab>("read");
+  useEffect(() => {
+    if ((viewMode === "history" || viewMode === "blame") && slug) {
+      fetchVersions(slug);
+    }
+  }, [viewMode, slug, fetchVersions]);
+
   const [editContent, setEditContent] = useState(page?.content ?? "");
   const [editMessage, setEditMessage] = useState("");
   const [suggestContent, setSuggestContent] = useState(page?.content ?? "");
@@ -233,6 +279,7 @@ export default function WikiPageView() {
   const [commentLine, setCommentLine] = useState<number | null>(null);
   const [commentBody, setCommentBody] = useState("");
   const [saved, setSaved] = useState(false);
+  const [expandedSug, setExpandedSug] = useState<string | null>(null);
 
   // Strip the leading H1 since the page title is already shown above the tabs
   const contentBody = useMemo(
@@ -242,6 +289,9 @@ export default function WikiPageView() {
   );
   const renderedHtml = useMemo(() => renderMarkdown(contentBody), [contentBody]);
   const toc = useMemo(() => extractToc(contentBody), [contentBody]);
+  const sortedVersions = useMemo(() => [...versions].sort((a, b) => a.version - b.version), [versions]);
+  const lines = useMemo(() => (page?.content ?? "").split("\n"), [page?.content]);
+  const blame = useMemo(() => computeBlame(sortedVersions, lines), [sortedVersions, lines]);
 
   if (!page) return (
     <div style={{ padding: "3rem", color: "var(--text-muted)" }}>
@@ -251,7 +301,6 @@ export default function WikiPageView() {
     </div>
   );
 
-  const lines = page.content.split("\n");
   const lineCommentMap: Record<number, typeof comments> = {};
   comments.forEach((c) => {
     if (!lineCommentMap[c.lineNumber]) lineCommentMap[c.lineNumber] = [];
@@ -265,7 +314,7 @@ export default function WikiPageView() {
     updatePage(page!.slug, editContent, user!.id, user!.name, user!.role, editMessage);
     setSaved(true);
     setTimeout(() => setSaved(false), 2000);
-    setTab("read");
+    setViewMode("read");
   }
 
   function handleSuggest() {
@@ -278,7 +327,7 @@ export default function WikiPageView() {
     };
     addSuggestion(s);
     setSuggestMessage("");
-    setTab("read");
+    setViewMode("read");
     alert("Suggestion submitted! A coach or captain will review it.");
   }
 
@@ -293,14 +342,6 @@ export default function WikiPageView() {
     setCommentBody("");
     setCommentLine(null);
   }
-
-  const TABS: { id: Tab; label: string }[] = [
-    { id: "read", label: "Read" },
-    { id: "comments", label: openCommentCount > 0 ? `Comments (${openCommentCount})` : "Comments" },
-    { id: "blame", label: "Blame" },
-    { id: "history", label: `History (${versions.length})` },
-    ...(canEdit ? [{ id: "edit" as Tab, label: "Edit" }] : [{ id: "suggest" as Tab, label: "Suggest Edit" }]),
-  ];
 
   return (
     <div style={{ padding: "2rem 3rem", maxWidth: 1100 }}>
@@ -339,18 +380,8 @@ export default function WikiPageView() {
         </div>
       )}
 
-      {/* Tab bar */}
-      <div style={{ display: "flex", gap: "0.25rem", borderBottom: "2px solid var(--border)", marginBottom: "1.5rem" }}>
-        {TABS.map((t) => (
-          <button key={t.id} onClick={() => setTab(t.id)}
-            style={{ padding: "0.5rem 1rem", border: "none", background: "none", cursor: "pointer", fontFamily: "'DM Sans', sans-serif", fontSize: "0.875rem", fontWeight: tab === t.id ? 600 : 400, color: tab === t.id ? "var(--navy)" : "var(--text-muted)", borderBottom: tab === t.id ? "2px solid var(--navy)" : "2px solid transparent", marginBottom: "-2px", transition: "color 0.15s" }}>
-            {t.label}
-          </button>
-        ))}
-      </div>
-
-      {/* ── READ TAB — Quartz / Obsidian style ── */}
-      {tab === "read" && (
+      {/* ── READ ── */}
+      {viewMode === "read" && (
         <div className="fade-in" style={{ display: "flex", gap: "3rem", alignItems: "flex-start" }}>
           {/* Rendered article */}
           <div
@@ -373,8 +404,8 @@ export default function WikiPageView() {
         </div>
       )}
 
-      {/* ── COMMENTS TAB ── */}
-      {tab === "comments" && (
+      {/* ── COMMENTS ── */}
+      {viewMode === "comments" && (
         <div className="fade-in">
           <div style={{ display: "flex", gap: "2rem" }}>
             {/* Line-annotated source */}
@@ -445,33 +476,60 @@ export default function WikiPageView() {
 
             {/* Suggestions sidebar */}
             {pageSuggestions.length > 0 && (
-              <div style={{ width: 240, flexShrink: 0 }}>
+              <div style={{ width: 260, flexShrink: 0 }}>
                 <div style={{ fontSize: "0.7rem", textTransform: "uppercase", letterSpacing: "0.08em", fontWeight: 600, color: "var(--text-muted)", marginBottom: "0.75rem" }}>Suggestions</div>
-                {pageSuggestions.map((s) => (
-                  <div key={s.id} style={{ background: "white", border: "1px solid var(--border)", borderRadius: 8, padding: "0.75rem", marginBottom: "0.5rem" }}>
-                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0.4rem" }}>
-                      <span style={{ fontSize: "0.75rem", fontWeight: 600 }}>{s.authorName}</span>
-                      <span className={`badge badge-${s.status}`}>{s.status}</span>
+                {pageSuggestions.map((s) => {
+                  const isOpen = expandedSug === s.id;
+                  const diff = isOpen ? diffLines(s.originalContent, s.suggestedContent) : [];
+                  return (
+                    <div key={s.id} style={{ background: "white", border: `1px solid ${isOpen ? "var(--navy)" : "var(--border)"}`, borderRadius: 8, marginBottom: "0.5rem", overflow: "hidden" }}>
+                      <div
+                        onClick={() => setExpandedSug(isOpen ? null : s.id)}
+                        style={{ padding: "0.75rem", cursor: "pointer" }}
+                      >
+                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0.4rem" }}>
+                          <span style={{ fontSize: "0.75rem", fontWeight: 600 }}>{s.authorName}</span>
+                          <div style={{ display: "flex", gap: "0.4rem", alignItems: "center" }}>
+                            <span className={`badge badge-${s.status}`}>{s.status}</span>
+                            <span style={{ fontSize: "0.65rem", color: "var(--text-muted)" }}>{isOpen ? "▲" : "▼"}</span>
+                          </div>
+                        </div>
+                        <p style={{ fontSize: "0.78rem", color: "var(--text-muted)" }}>{s.message}</p>
+                        <div style={{ fontSize: "0.7rem", color: "var(--text-muted)", marginTop: "0.35rem" }}>{s.createdAt}</div>
+                      </div>
+                      {isOpen && (
+                        <div style={{ borderTop: "1px solid var(--border)", padding: "0.6rem 0.75rem", background: "#fafafa" }}>
+                          <div style={{ fontSize: "0.68rem", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.05em", color: "var(--text-muted)", marginBottom: "0.4rem" }}>Proposed changes</div>
+                          <div style={{ fontFamily: "'DM Mono', monospace", fontSize: "0.72rem", lineHeight: 1.6 }}>
+                            {diff.map((part, i) => {
+                              if (!part.added && !part.removed) return null;
+                              const lines = part.value.replace(/\n$/, "").split("\n");
+                              return lines.map((line, j) => (
+                                <div key={`${i}-${j}`} style={{ padding: "1px 4px", background: part.added ? "rgba(34,197,94,0.12)" : "rgba(239,68,68,0.1)", color: part.added ? "#15803d" : "#b91c1c", whiteSpace: "pre-wrap", wordBreak: "break-word" }}>
+                                  {part.added ? "+ " : "- "}{line}
+                                </div>
+                              ));
+                            })}
+                          </div>
+                        </div>
+                      )}
                     </div>
-                    <p style={{ fontSize: "0.78rem", color: "var(--text-muted)" }}>{s.message}</p>
-                    <div style={{ fontSize: "0.7rem", color: "var(--text-muted)", marginTop: "0.35rem" }}>{s.createdAt}</div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             )}
           </div>
         </div>
       )}
 
-      {/* ── BLAME TAB ── */}
-      {tab === "blame" && (
+      {/* ── BLAME ── */}
+      {viewMode === "blame" && (
         <div className="fade-in">
           <p style={{ fontSize: "0.82rem", color: "var(--text-muted)", marginBottom: "1rem" }}>Git blame shows who last modified each part of this article.</p>
           <div style={{ fontFamily: "'DM Mono', monospace", fontSize: "0.82rem", lineHeight: "1.7" }}>
             {lines.map((line, idx) => {
               const lineNum = idx + 1;
-              const vIdx = Math.floor((idx / lines.length) * Math.max(versions.length, 1));
-              const ver = versions[vIdx] ?? { authorName: page.authorName, authorRole: page.authorId === "u1" ? "coach" : "athlete", createdAt: page.createdAt, version: 1 };
+              const ver = blame[idx] ?? { authorName: page.authorName, version: 1, createdAt: page.createdAt };
               return (
                 <div key={idx} className="line-row" style={{ borderBottom: "1px solid rgba(0,0,0,0.03)" }}>
                   <span style={{ minWidth: "1.8rem", color: "var(--text-muted)", textAlign: "right", padding: "0 0.4rem", fontSize: "0.72rem" }}>{lineNum}</span>
@@ -486,8 +544,8 @@ export default function WikiPageView() {
         </div>
       )}
 
-      {/* ── HISTORY TAB ── */}
-      {tab === "history" && (
+      {/* ── HISTORY ── */}
+      {viewMode === "history" && (
         <div className="fade-in">
           {versions.length === 0 && <p style={{ color: "var(--text-muted)" }}>No version history yet.</p>}
           {versions.map((v, i) => (
@@ -507,8 +565,8 @@ export default function WikiPageView() {
         </div>
       )}
 
-      {/* ── EDIT TAB (coaches / captains) ── */}
-      {tab === "edit" && canEdit && (
+      {/* ── EDIT (coaches / captains) ── */}
+      {viewMode === "edit" && canEdit && (
         <div className="fade-in">
           <p style={{ fontSize: "0.82rem", color: "var(--text-muted)", marginBottom: "1rem" }}>You have editor access. Changes are saved with a commit message.</p>
           <textarea value={editContent} onChange={(e) => setEditContent(e.target.value)} rows={24}
@@ -529,8 +587,8 @@ export default function WikiPageView() {
         </div>
       )}
 
-      {/* ── SUGGEST TAB (athletes) ── */}
-      {tab === "suggest" && !canEdit && (
+      {/* ── SUGGEST (athletes) ── */}
+      {viewMode === "suggest" && !canEdit && (
         <div className="fade-in">
           <div style={{ background: "var(--gold-pale)", border: "1px solid var(--gold)", borderRadius: 8, padding: "0.75rem 1rem", marginBottom: "1rem", fontSize: "0.82rem" }}>
             <strong>Suggesting an edit:</strong> Your suggestion will be reviewed by a coach or captain before being merged.
