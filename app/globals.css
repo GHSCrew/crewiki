@@ -1,0 +1,94 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --navy: #0a1628;
+  --navy-mid: #12233f;
+  --navy-light: #1e3a5f;
+  --gold: #c9a84c;
+  --gold-light: #e8c86d;
+  --gold-pale: #f5e9c0;
+  --water: #2a6fa8;
+  --water-light: #4a9fd4;
+  --cream: #faf8f3;
+  --text: #1a2332;
+  --text-muted: #5a6a7e;
+  --border: #d4c9a8;
+  --surface: #ffffff;
+  --surface-raised: #f5f2ea;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: 'DM Sans', sans-serif;
+  background: var(--cream);
+  color: var(--text);
+  line-height: 1.6;
+}
+
+h1, h2, h3, h4 {
+  font-family: 'DM Serif Display', serif;
+  line-height: 1.2;
+}
+
+code, pre, .mono {
+  font-family: 'DM Mono', monospace;
+}
+
+/* Wiki prose styles */
+.wiki-content {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 1rem;
+  line-height: 1.75;
+  color: var(--text);
+}
+
+.wiki-content h1 { font-family: 'DM Serif Display', serif; font-size: 2rem; margin-bottom: 1rem; color: var(--navy); border-bottom: 2px solid var(--gold); padding-bottom: 0.5rem; }
+.wiki-content h2 { font-family: 'DM Serif Display', serif; font-size: 1.5rem; margin-top: 2rem; margin-bottom: 0.75rem; color: var(--navy); }
+.wiki-content h3 { font-family: 'DM Serif Display', serif; font-size: 1.2rem; margin-top: 1.5rem; margin-bottom: 0.5rem; color: var(--navy-light); }
+.wiki-content p { margin-bottom: 1rem; }
+.wiki-content ul, .wiki-content ol { margin: 0.75rem 0 1rem 1.5rem; }
+.wiki-content li { margin-bottom: 0.35rem; }
+.wiki-content strong { font-weight: 600; color: var(--navy); }
+.wiki-content em { font-style: italic; }
+.wiki-content code { font-family: 'DM Mono', monospace; background: var(--surface-raised); padding: 0.15rem 0.4rem; border-radius: 4px; font-size: 0.875rem; color: var(--navy-light); }
+.wiki-content pre { background: var(--navy); color: var(--gold-light); padding: 1.25rem; border-radius: 8px; overflow-x: auto; margin: 1rem 0; }
+.wiki-content pre code { background: none; color: inherit; padding: 0; }
+.wiki-content blockquote { border-left: 3px solid var(--gold); padding-left: 1rem; color: var(--text-muted); margin: 1rem 0; font-style: italic; }
+.wiki-content table { width: 100%; border-collapse: collapse; margin: 1rem 0; }
+.wiki-content th { background: var(--navy); color: var(--gold-light); padding: 0.6rem 1rem; text-align: left; font-family: 'DM Sans', sans-serif; font-weight: 600; font-size: 0.875rem; }
+.wiki-content td { padding: 0.6rem 1rem; border-bottom: 1px solid var(--border); }
+.wiki-content tr:nth-child(even) td { background: var(--surface-raised); }
+.wiki-content a { color: var(--water); text-decoration: underline; }
+.wiki-content hr { border: none; border-top: 1px solid var(--border); margin: 2rem 0; }
+
+/* Line highlighting */
+.line-row { display: flex; }
+.line-number { min-width: 2.5rem; color: var(--text-muted); font-family: 'DM Mono', monospace; font-size: 0.8rem; padding: 0.15rem 0.5rem 0.15rem 0; text-align: right; user-select: none; cursor: pointer; }
+.line-number:hover { color: var(--water); }
+.line-content { flex: 1; padding: 0.15rem 0.5rem; border-radius: 3px; white-space: pre-wrap; font-family: 'DM Mono', monospace; font-size: 0.875rem; cursor: pointer; }
+.line-content:hover { background: var(--gold-pale); }
+.line-content.has-comment { background: rgba(201,168,76,0.12); }
+.line-content.highlighted { background: rgba(42,111,168,0.15); }
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+/* Transitions */
+.fade-in { animation: fadeIn 0.25s ease-out; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
+
+/* Badges */
+.badge { display: inline-flex; align-items: center; gap: 4px; padding: 2px 8px; border-radius: 99px; font-size: 0.72rem; font-weight: 600; letter-spacing: 0.03em; text-transform: uppercase; }
+.badge-coach { background: #1e3a5f; color: #e8c86d; }
+.badge-captain { background: #c9a84c; color: #0a1628; }
+.badge-athlete { background: #e8f0f8; color: #12233f; }
+.badge-admin { background: #2a6fa8; color: white; }
+.badge-open { background: #dff0e8; color: #1a6641; }
+.badge-approved { background: #e8f0ff; color: #1a3f99; }
+.badge-rejected { background: #fde8e8; color: #991a1a; }
+.badge-merged { background: #0a1628; color: #e8c86d; }
