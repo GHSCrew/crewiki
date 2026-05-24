@@ -11,22 +11,20 @@ const MODE_LABELS: Record<ViewMode, string> = {
   history: "History",
   edit: "Edit",
   suggest: "Edit",
+  manage: "Manage",
 };
 
-export default function WikiTopbar() {
+export default function WikiTopbar({ isArticlePage }: { isArticlePage: boolean }) {
   const { canEdit } = useAuth();
   const viewMode = useWikiStore(s => s.viewMode);
   const setViewMode = useWikiStore(s => s.setViewMode);
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
-  const modes: ViewMode[] = [
-    "read",
-    "comments",
-    "blame",
-    "history",
-    canEdit ? "edit" : "suggest",
-  ];
+  const articleModes: ViewMode[] = isArticlePage
+    ? ["read", "comments", "blame", "history", canEdit ? "edit" : "suggest"]
+    : [];
+  const modes: ViewMode[] = [...articleModes, "manage"];
 
   useEffect(() => {
     function onMouseDown(e: MouseEvent) {

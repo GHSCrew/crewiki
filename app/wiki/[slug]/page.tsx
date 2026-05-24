@@ -2,6 +2,7 @@
 import { useState, useMemo, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { diffLines } from "diff";
+import { toast } from "@/lib/toast";
 import { useAuth } from "@/lib/auth-context";
 import { useWikiStore } from "@/lib/store";
 import type { EditSuggestion, PageVersion } from "@/types";
@@ -10,38 +11,54 @@ import type { EditSuggestion, PageVersion } from "@/types";
 
 type BlameInfo = { authorName: string; version: number; createdAt: string };
 
-function computeBlame(sortedVersions: PageVersion[], currentLines: string[]): BlameInfo[] {
-  if (sortedVersions.length === 0) return currentLines.map(() => ({ authorName: "Unknown", version: 1, createdAt: "" }));
+function computeBlame(sortedVersions: PageVersion[], currentLines: string[], pageAuthor: string, pageDate: string): BlameInfo[] {
+  const noHistoryFallback: BlameInfo = { authorName: pageAuthor, version: 1, createdAt: pageDate };
+  if (sortedVersions.length === 0) return currentLines.map(() => noHistoryFallback);
 
   const fallback: BlameInfo = { authorName: sortedVersions[0].authorName, version: sortedVersions[0].version, createdAt: sortedVersions[0].createdAt };
   const blame: BlameInfo[] = currentLines.map(() => fallback);
+  const currentContent = currentLines.join("\n");
 
   for (let vi = 0; vi < sortedVersions.length; vi++) {
     const prevContent = vi > 0 ? sortedVersions[vi - 1].content : "";
     const currContent = sortedVersions[vi].content;
     const vInfo: BlameInfo = { authorName: sortedVersions[vi].authorName, version: sortedVersions[vi].version, createdAt: sortedVersions[vi].createdAt };
 
-    // Collect positions (in currContent) of lines that were added in this version
-    const addedPositions = new Set<number>();
+    // Step 1: find which positions in currContent were newly added in this version
+    const addedInCurr = new Set<number>();
     let pos = 0;
     for (const change of diffLines(prevContent, currContent)) {
       const count = change.count ?? 0;
       if (change.added) {
-        for (let i = 0; i < count; i++) addedPositions.add(pos + i);
+        for (let i = 0; i < count; i++) addedInCurr.add(pos + i);
         pos += count;
       } else if (!change.removed) {
         pos += count;
       }
     }
 
-    // Map added positions in this version's content to positions in the current content
-    const versionLines = currContent.split("\n");
-    const addedContent = new Set<string>();
-    addedPositions.forEach(p => { if (p < versionLines.length) addedContent.add(versionLines[p]); });
+    // Step 2: map those positions in currContent to positions in currentContent
+    // using a positional diff (not content matching) so duplicate lines work correctly
+    const currToFinal = new Map<number, number>();
+    let cPos = 0, fPos = 0;
+    for (const change of diffLines(currContent, currentContent)) {
+      const count = change.count ?? 0;
+      if (!change.added && !change.removed) {
+        for (let i = 0; i < count; i++) currToFinal.set(cPos + i, fPos + i);
+        cPos += count; fPos += count;
+      } else if (change.removed) {
+        cPos += count;
+      } else {
+        fPos += count;
+      }
+    }
 
-    // Assign blame for matching lines in the current file
-    for (let j = 0; j < currentLines.length; j++) {
-      if (addedContent.has(currentLines[j])) blame[j] = vInfo;
+    // Step 3: credit surviving added lines to this version
+    for (const addedPos of addedInCurr) {
+      const finalPos = currToFinal.get(addedPos);
+      if (finalPos !== undefined && finalPos < blame.length) {
+        blame[finalPos] = vInfo;
+      }
     }
   }
 
@@ -270,7 +287,7 @@ export default function WikiPageView() {
     if ((viewMode === "history" || viewMode === "blame") && slug) {
       fetchVersions(slug);
     }
-  }, [viewMode, slug, fetchVersions]);
+  }, [viewMode, slug, fetchVersions, page?.version ?? 0]);
 
   const [editContent, setEditContent] = useState(page?.content ?? "");
   const [editMessage, setEditMessage] = useState("");
@@ -291,7 +308,10 @@ export default function WikiPageView() {
   const toc = useMemo(() => extractToc(contentBody), [contentBody]);
   const sortedVersions = useMemo(() => [...versions].sort((a, b) => a.version - b.version), [versions]);
   const lines = useMemo(() => (page?.content ?? "").split("\n"), [page?.content]);
-  const blame = useMemo(() => computeBlame(sortedVersions, lines), [sortedVersions, lines]);
+  const blame = useMemo(
+    () => computeBlame(sortedVersions, lines, page?.authorName ?? "Unknown", page?.createdAt ?? ""),
+    [sortedVersions, lines, page?.authorName, page?.createdAt]
+  );
 
   if (!page) return (
     <div style={{ padding: "3rem", color: "var(--text-muted)" }}>
@@ -328,7 +348,7 @@ export default function WikiPageView() {
     addSuggestion(s);
     setSuggestMessage("");
     setViewMode("read");
-    alert("Suggestion submitted! A coach or captain will review it.");
+    toast("Suggestion submitted! A coach or captain will review it.");
   }
 
   function handleAddComment() {
@@ -534,7 +554,7 @@ export default function WikiPageView() {
                 <div key={idx} className="line-row" style={{ borderBottom: "1px solid rgba(0,0,0,0.03)" }}>
                   <span style={{ minWidth: "1.8rem", color: "var(--text-muted)", textAlign: "right", padding: "0 0.4rem", fontSize: "0.72rem" }}>{lineNum}</span>
                   <span style={{ minWidth: 140, padding: "0 0.75rem", fontSize: "0.72rem", color: "var(--text-muted)", borderRight: "1px solid var(--border)", whiteSpace: "nowrap" }}>
-                    <span style={{ fontWeight: 600, color: "var(--navy)" }}>{ver.authorName}</span> · v{ver.version} · {ver.createdAt}
+                    <span style={{ fontWeight: 600, color: "var(--navy)" }}>{ver.authorName}</span> · v{ver.version}{ver.createdAt ? ` · ${ver.createdAt}` : ""}
                   </span>
                   <span style={{ flex: 1, padding: "0 0.75rem", whiteSpace: "pre-wrap" }}>{line || " "}</span>
                 </div>

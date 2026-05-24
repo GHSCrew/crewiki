@@ -55,3 +55,35 @@ export async function PUT(
 
   return Response.json(deserializePage(updated));
 }
+
+export async function PATCH(
+  request: Request,
+  { params }: { params: Promise<{ slug: string }> }
+) {
+  const { slug } = await params;
+  const body = await request.json() as { folder?: string; title?: string };
+
+  const page = await prisma.wikiPage.findUnique({ where: { slug } });
+  if (!page) return Response.json({ error: "Not found" }, { status: 404 });
+
+  const updated = await prisma.wikiPage.update({
+    where: { slug },
+    data: {
+      ...(body.folder !== undefined && { folder: body.folder }),
+      ...(body.title !== undefined && { title: body.title }),
+      updatedAt: new Date().toISOString().split("T")[0],
+    },
+  });
+  return Response.json(deserializePage(updated));
+}
+
+export async function DELETE(
+  _request: Request,
+  { params }: { params: Promise<{ slug: string }> }
+) {
+  const { slug } = await params;
+  const page = await prisma.wikiPage.findUnique({ where: { slug } });
+  if (!page) return Response.json({ error: "Not found" }, { status: 404 });
+  await prisma.wikiPage.delete({ where: { slug } });
+  return new Response(null, { status: 204 });
+}

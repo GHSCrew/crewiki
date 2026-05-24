@@ -99,7 +99,29 @@ export interface TeamMember {
   registeredAt: string;
 }
 
-export type ViewMode = "read" | "comments" | "edit" | "suggest" | "blame" | "history";
+export type ViewMode = "read" | "comments" | "edit" | "suggest" | "blame" | "history" | "manage";
+
+export interface PageRequest {
+  id: string;
+  type: "create" | "delete" | "move";
+  status: "pending" | "approved" | "rejected";
+  requesterId: string;
+  requesterName: string;
+  requesterRole: string;
+  pageId?: string;
+  pageTitle?: string;
+  pageSlug?: string;
+  newFolder?: string;
+  newTitle?: string;
+  newSlug?: string;
+  newContent?: string;
+  folder?: string;
+  message: string;
+  createdAt: string;
+  reviewedBy?: string;
+  reviewedAt?: string;
+  reviewNote?: string;
+}
 
 export type Permission = "view" | "suggest" | "edit" | "admin";
 

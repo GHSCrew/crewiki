@@ -108,6 +108,28 @@ model Notification {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
+model PageRequest {
+  id            String  @id @default(cuid())
+  type          String  // "create" | "delete" | "move"
+  status        String  @default("pending") // "pending" | "approved" | "rejected"
+  requesterId   String
+  requesterName String
+  requesterRole String
+  pageId        String?
+  pageTitle     String?
+  pageSlug      String?
+  newFolder     String?
+  newTitle      String?
+  newSlug       String?
+  newContent    String?
+  folder        String?
+  message       String  @default("")
+  createdAt     String
+  reviewedBy    String?
+  reviewedAt    String?
+  reviewNote    String?
+}
+
 model TeamMember {
   id           String  @id @default(cuid())
   userId       String? @unique

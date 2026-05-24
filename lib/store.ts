@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import type { WikiPage, EditSuggestion, LineComment, Notification, PageVersion, ViewMode } from "@/types";
+import type { WikiPage, EditSuggestion, LineComment, Notification, PageVersion, PageRequest, ViewMode } from "@/types";
 
 interface WikiStore {
   pages: WikiPage[];
@@ -7,12 +7,16 @@ interface WikiStore {
   comments: LineComment[];
   notifications: Notification[];
   versions: PageVersion[];
+  pageRequests: PageRequest[];
   hydrated: boolean;
   viewMode: ViewMode;
 
   hydrate: (userId?: string) => Promise<void>;
   getPage: (slug: string) => WikiPage | undefined;
   updatePage: (slug: string, content: string, authorId: string, authorName: string, authorRole: string, message: string) => Promise<void>;
+  createPage: (title: string, content: string, folder: string, authorId: string, authorName: string) => Promise<WikiPage>;
+  deletePage: (slug: string) => Promise<void>;
+  movePage: (slug: string, newFolder: string) => Promise<void>;
   addSuggestion: (s: Omit<EditSuggestion, "id" | "createdAt">) => Promise<void>;
   updateSuggestionStatus: (id: string, status: EditSuggestion["status"], reviewedBy: string, note: string) => Promise<void>;
   addComment: (c: Omit<LineComment, "id" | "createdAt">) => Promise<void>;
@@ -21,6 +25,9 @@ interface WikiStore {
   markAllRead: (userId: string) => Promise<void>;
   setViewMode: (m: ViewMode) => void;
   fetchVersions: (slug: string) => Promise<void>;
+  fetchPageRequests: () => Promise<void>;
+  addPageRequest: (req: Omit<PageRequest, "id" | "createdAt" | "status">) => Promise<void>;
+  reviewPageRequest: (id: string, status: "approved" | "rejected", reviewedBy: string, reviewNote: string) => Promise<void>;
   getVersions: (pageId: string) => PageVersion[];
   getPageComments: (pageId: string) => LineComment[];
   getOpenSuggestions: () => EditSuggestion[];
@@ -32,6 +39,7 @@ export const useWikiStore = create<WikiStore>((set, get) => ({
   comments: [],
   notifications: [],
   versions: [],
+  pageRequests: [],
   hydrated: false,
   viewMode: "read",
 
@@ -47,6 +55,32 @@ export const useWikiStore = create<WikiStore>((set, get) => ({
   },
 
   getPage: (slug) => get().pages.find(p => p.slug === slug),
+
+  createPage: async (title, content, folder, authorId, authorName) => {
+    const res = await fetch("/api/pages", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ title, content, folder, authorId, authorName }),
+    });
+    const created: WikiPage = await res.json();
+    set(state => ({ pages: [...state.pages, created].sort((a, b) => a.title.localeCompare(b.title)) }));
+    return created;
+  },
+
+  deletePage: async (slug) => {
+    await fetch(`/api/pages/${slug}`, { method: "DELETE" });
+    set(state => ({ pages: state.pages.filter(p => p.slug !== slug) }));
+  },
+
+  movePage: async (slug, newFolder) => {
+    const res = await fetch(`/api/pages/${slug}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ folder: newFolder }),
+    });
+    const updated: WikiPage = await res.json();
+    set(state => ({ pages: state.pages.map(p => p.slug === slug ? updated : p) }));
+  },
 
   updatePage: async (slug, content, authorId, authorName, authorRole, message) => {
     const res = await fetch(`/api/pages/${slug}`, {
@@ -109,6 +143,34 @@ export const useWikiStore = create<WikiStore>((set, get) => ({
   },
 
   setViewMode: (m) => set({ viewMode: m }),
+
+  fetchPageRequests: async () => {
+    const reqs: PageRequest[] = await fetch("/api/page-requests").then(r => r.json());
+    set({ pageRequests: reqs });
+  },
+
+  addPageRequest: async (req) => {
+    const res = await fetch("/api/page-requests", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(req),
+    });
+    const created: PageRequest = await res.json();
+    set(state => ({ pageRequests: [created, ...state.pageRequests] }));
+  },
+
+  reviewPageRequest: async (id, status, reviewedBy, reviewNote) => {
+    const res = await fetch(`/api/page-requests/${id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ status, reviewedBy, reviewNote }),
+    });
+    const data = await res.json();
+    set(state => ({
+      pageRequests: state.pageRequests.map(r => r.id !== id ? r : data.request),
+      pages: data.pages ?? state.pages,
+    }));
+  },
 
   fetchVersions: async (slug) => {
     const fetched: PageVersion[] = await fetch(`/api/pages/${slug}/versions`).then(r => r.json());

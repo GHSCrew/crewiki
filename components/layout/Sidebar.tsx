@@ -4,7 +4,81 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth-context";
 import { useWikiStore } from "@/lib/store";
-import { WIKI_FOLDERS } from "@/lib/constants";
+import type { WikiPage } from "@/types";
+
+interface FolderNode {
+  pages: WikiPage[];
+  children: Record<string, FolderNode>;
+}
+
+function buildTree(pages: WikiPage[]): Record<string, FolderNode> {
+  const root: Record<string, FolderNode> = {};
+  for (const page of pages) {
+    const parts = page.folder.split("/").filter(Boolean);
+    let level = root;
+    for (const part of parts) {
+      if (!level[part]) level[part] = { pages: [], children: {} };
+      if (part === parts[parts.length - 1]) {
+        level[part].pages.push(page);
+      } else {
+        level = level[part].children;
+      }
+    }
+    if (parts.length === 0) {
+      if (!root["Uncategorized"]) root["Uncategorized"] = { pages: [], children: {} };
+      root["Uncategorized"].pages.push(page);
+    }
+  }
+  return root;
+}
+
+function FolderTree({ node, name, depth, pathname, folderPath }: {
+  node: FolderNode;
+  name: string;
+  depth: number;
+  pathname: string;
+  folderPath: string;
+}) {
+  const [open, setOpen] = useState(true);
+  const hasChildren = Object.keys(node.children).length > 0;
+  const indent = depth * 12;
+  return (
+    <div>
+      <div
+        style={{ display: "flex", alignItems: "center", gap: "0.35rem", padding: `0.3rem 0.75rem 0.3rem ${0.75 + indent / 16}rem`, cursor: "pointer" }}
+        onClick={() => setOpen(o => !o)}
+      >
+        {(hasChildren || node.pages.length > 0) && (
+          <span style={{ fontSize: "0.6rem", color: "rgba(255,255,255,0.3)", flexShrink: 0 }}>{open ? "▾" : "▸"}</span>
+        )}
+        <Link
+          href={`/wiki/folder/${encodeURIComponent(folderPath)}`}
+          onClick={e => e.stopPropagation()}
+          style={{ textDecoration: "none", fontSize: "0.78rem", fontWeight: 600, color: pathname === `/wiki/folder/${encodeURIComponent(folderPath)}` ? "var(--gold)" : "rgba(255,255,255,0.45)", flex: 1 }}
+        >
+          {name}
+        </Link>
+      </div>
+      {open && (
+        <>
+          {node.pages.map(p => {
+            const active = pathname === `/wiki/${p.slug}`;
+            return (
+              <Link key={p.slug} href={`/wiki/${p.slug}`} style={{ textDecoration: "none" }}>
+                <div style={{ padding: `0.3rem 0.75rem 0.3rem ${1.5 + indent / 16}rem`, fontSize: "0.82rem", color: active ? "var(--gold)" : "rgba(255,255,255,0.65)", background: active ? "rgba(201,168,76,0.12)" : "transparent", borderRadius: 6, cursor: "pointer", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                  {p.title}
+                </div>
+              </Link>
+            );
+          })}
+          {Object.entries(node.children).sort(([a], [b]) => a.localeCompare(b)).map(([childName, childNode]) => (
+            <FolderTree key={childName} name={childName} node={childNode} depth={depth + 1} pathname={pathname} folderPath={`${folderPath}/${childName}`} />
+          ))}
+        </>
+      )}
+    </div>
+  );
+}
 
 const NAV_ITEMS = [
   { href: "/wiki", label: "Home", icon: "⊞" },
@@ -27,11 +101,7 @@ export default function Sidebar() {
 
   function handleLogout() { logout(); router.push("/login"); }
 
-  const folderMap: Record<string, typeof pages> = {};
-  pages.forEach(p => {
-    if (!folderMap[p.folder]) folderMap[p.folder] = [];
-    folderMap[p.folder].push(p);
-  });
+  const tree = buildTree(pages);
 
   if (collapsed) {
     return (
@@ -108,27 +178,9 @@ export default function Sidebar() {
         </div>
 
         <div style={{ fontSize: "0.7rem", color: "rgba(255,255,255,0.3)", textTransform: "uppercase", letterSpacing: "0.08em", fontWeight: 600, padding: "0 0.75rem", marginBottom: "0.5rem" }}>Content</div>
-        {WIKI_FOLDERS.map(folder => {
-          const folderPages = folderMap[folder] || [];
-          if (folderPages.length === 0) return null;
-          return (
-            <div key={folder} style={{ marginBottom: "0.25rem" }}>
-              <Link href={`/wiki/folder/${encodeURIComponent(folder)}`} style={{ textDecoration: "none" }}>
-                <div style={{ padding: "0.3rem 0.75rem", fontSize: "0.78rem", fontWeight: 600, color: pathname === `/wiki/folder/${encodeURIComponent(folder)}` ? "var(--gold)" : "rgba(255,255,255,0.45)", cursor: "pointer" }}>{folder}</div>
-              </Link>
-              {folderPages.map(p => {
-                const active = pathname === `/wiki/${p.slug}`;
-                return (
-                  <Link key={p.slug} href={`/wiki/${p.slug}`} style={{ textDecoration: "none" }}>
-                    <div style={{ padding: "0.3rem 0.75rem 0.3rem 1.5rem", fontSize: "0.82rem", color: active ? "var(--gold)" : "rgba(255,255,255,0.65)", background: active ? "rgba(201,168,76,0.12)" : "transparent", borderRadius: 6, cursor: "pointer", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                      {p.title}
-                    </div>
-                  </Link>
-                );
-              })}
-            </div>
-          );
-        })}
+        {Object.entries(tree).sort(([a], [b]) => a.localeCompare(b)).map(([name, node]) => (
+          <FolderTree key={name} name={name} node={node} depth={0} pathname={pathname} folderPath={name} />
+        ))}
       </nav>
 
       {/* Logout */}

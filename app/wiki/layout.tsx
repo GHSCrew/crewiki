@@ -5,13 +5,17 @@ import { useAuth } from "@/lib/auth-context";
 import { useWikiStore } from "@/lib/store";
 import Sidebar from "@/components/layout/Sidebar";
 import WikiTopbar from "@/components/layout/WikiTopbar";
+import ManageBar from "@/components/layout/ManageBar";
+import ToastContainer from "@/components/Toast";
+
+const NAMED_ROUTES = new Set(["suggestions", "team", "notifications", "admin", "folder"]);
 
 export default function WikiLayout({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
   const router = useRouter();
   const pathname = usePathname();
   const hydrate = useWikiStore(s => s.hydrate);
-  const NAMED_ROUTES = new Set(["suggestions", "team", "notifications", "admin", "folder"]);
+  const viewMode = useWikiStore(s => s.viewMode);
   const segment = pathname.split("/")[2];
   const isArticlePage = !!segment && !NAMED_ROUTES.has(segment);
 
@@ -30,11 +34,13 @@ export default function WikiLayout({ children }: { children: React.ReactNode }) 
     <div style={{ display: "flex", minHeight: "100vh" }}>
       <Sidebar />
       <div style={{ flex: 1, display: "flex", flexDirection: "column", minWidth: 0 }}>
-        {isArticlePage && <WikiTopbar />}
+        <WikiTopbar isArticlePage={isArticlePage} />
+        {viewMode === "manage" && <ManageBar />}
         <main style={{ flex: 1, overflowX: "hidden" }}>
           {children}
         </main>
       </div>
+      <ToastContainer />
     </div>
   );
 }
