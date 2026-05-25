@@ -3,10 +3,8 @@ export type Role = "athlete" | "captain" | "coach";
 export interface User {
   id: string;
   name: string;
-  email: string;
   username?: string;
   role: Role;
-  avatarUrl?: string;
   joinedAt: string;
 }
 

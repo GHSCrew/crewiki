@@ -66,8 +66,8 @@ export default function AdminPage() {
 
       {/* Tabs */}
       <div style={{ display: "flex", gap: "0.25rem", borderBottom: "2px solid var(--border)", marginBottom: "1.5rem" }}>
-        {(["users", "pages", "reset"] as const).map(t => (
-          <button key={t} onClick={() => setActiveTab(t)}
+        {(["users", "pages", ...(user?.role === "coach" ? ["reset"] : [])] as const).map(t => (
+          <button key={t} onClick={() => setActiveTab(t as typeof activeTab)}
             style={{ padding: "0.5rem 1rem", border: "none", background: "none", cursor: "pointer", fontFamily: "'DM Sans', sans-serif", fontSize: "0.875rem", fontWeight: activeTab === t ? 600 : 400, color: t === "reset" ? (activeTab === t ? "#b03030" : "rgba(176,48,48,0.6)") : activeTab === t ? "var(--navy)" : "var(--text-muted)", borderBottom: activeTab === t ? `2px solid ${t === "reset" ? "#b03030" : "var(--navy)"}` : "2px solid transparent", marginBottom: "-2px", textTransform: "capitalize" }}>
             {t === "users" ? "Users & Roles" : t === "pages" ? "Pages" : "Factory Reset"}
           </button>
@@ -101,7 +101,7 @@ export default function AdminPage() {
                         {u.id === user?.id && <span style={{ fontSize: "0.68rem", background: "var(--gold-pale)", color: "var(--navy)", padding: "1px 6px", borderRadius: 4, fontWeight: 600 }}>You</span>}
                       </div>
                     </td>
-                    <td style={{ padding: "0.75rem 1rem", fontSize: "0.8rem", color: "var(--text-muted)" }}>{u.username ?? u.email}</td>
+                    <td style={{ padding: "0.75rem 1rem", fontSize: "0.8rem", color: "var(--text-muted)" }}>{u.username ?? "—"}</td>
                     <td style={{ padding: "0.75rem 1rem" }}><span className={`badge badge-${u.role}`}>{u.role}</span></td>
                     <td style={{ padding: "0.75rem 1rem", fontSize: "0.8rem", color: "var(--text-muted)" }}>{u.joinedAt}</td>
                     <td style={{ padding: "0.75rem 1rem" }}>

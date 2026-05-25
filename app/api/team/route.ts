@@ -15,7 +15,6 @@ export async function POST(request: Request) {
         data: {
           name: body.name,
           username,
-          email: `${username}@crewwiki.local`,
           passwordHash,
           role: body.role,
           status: "active",
@@ -40,9 +39,6 @@ export async function GET() {
     ...m,
     role: m.role as Role,
     userId: m.userId ?? undefined,
-    boatClass: m.boatClass ?? undefined,
-    seat: m.seat ?? undefined,
-    side: m.side as "port" | "starboard" | "cox" | undefined ?? undefined,
     username: m.username ?? undefined,
   })));
 }

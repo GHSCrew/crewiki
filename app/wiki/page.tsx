@@ -56,7 +56,7 @@ export default function WikiHome() {
       const relativePath = (file as File & { webkitRelativePath?: string }).webkitRelativePath || file.name;
       const folder = folderFromPath(relativePath);
       if (canEdit) {
-        await createPage(title, content, folder, user!.id, user!.name);
+        await createPage(title, content, folder, user!.id, user!.name, user!.role);
       } else {
         await addPageRequest({ type: "create", requesterId: user!.id, requesterName: user!.name, requesterRole: user!.role, newTitle: title, newContent: content, folder, message: `Import: ${file.name}` });
       }
@@ -74,7 +74,7 @@ export default function WikiHome() {
     const title = newTitle.trim();
     if (!title) return;
     if (canEdit) {
-      await createPage(title, `# ${title}\n`, "", user!.id, user!.name);
+      await createPage(title, `# ${title}\n`, "", user!.id, user!.name, user!.role);
       toast(`"${title}" created`, "success");
     } else {
       await addPageRequest({ type: "create", requesterId: user!.id, requesterName: user!.name, requesterRole: user!.role, newTitle: title, newContent: `# ${title}\n`, folder: "", message: `New page request: "${title}"` });

@@ -13,11 +13,9 @@ export async function GET(request: Request) {
   return Response.json(users.map(u => ({
     id: u.id,
     name: u.name,
-    email: u.email,
     username: u.username ?? undefined,
     role: u.role as Role,
     status: u.status,
-    avatarUrl: u.avatarUrl ?? undefined,
     joinedAt: u.joinedAt,
   })));
 }

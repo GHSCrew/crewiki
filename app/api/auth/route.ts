@@ -10,7 +10,7 @@ export async function POST(request: Request) {
   }
 
   const user = await prisma.user.findFirst({
-    where: { OR: [{ username: username.toLowerCase() }, { email: username.toLowerCase() }] },
+    where: { username: username.toLowerCase() },
   });
 
   if (!user) {
@@ -29,10 +29,8 @@ export async function POST(request: Request) {
   return Response.json({
     id: user.id,
     name: user.name,
-    email: user.email,
     username: user.username ?? undefined,
     role: user.role as Role,
-    avatarUrl: user.avatarUrl ?? undefined,
     joinedAt: user.joinedAt,
   });
 }

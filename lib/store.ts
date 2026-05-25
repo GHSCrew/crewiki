@@ -14,7 +14,7 @@ interface WikiStore {
   hydrate: (userId?: string) => Promise<void>;
   getPage: (slug: string) => WikiPage | undefined;
   updatePage: (slug: string, content: string, authorId: string, authorName: string, authorRole: string, message: string) => Promise<void>;
-  createPage: (title: string, content: string, folder: string, authorId: string, authorName: string) => Promise<WikiPage>;
+  createPage: (title: string, content: string, folder: string, authorId: string, authorName: string, authorRole: string) => Promise<WikiPage>;
   deletePage: (slug: string) => Promise<void>;
   movePage: (slug: string, newFolder: string) => Promise<void>;
   renamePage: (slug: string, newTitle: string) => Promise<WikiPage>;
@@ -58,11 +58,11 @@ export const useWikiStore = create<WikiStore>((set, get) => ({
 
   getPage: (slug) => get().pages.find(p => p.slug === slug),
 
-  createPage: async (title, content, folder, authorId, authorName) => {
+  createPage: async (title, content, folder, authorId, authorName, authorRole) => {
     const res = await fetch("/api/pages", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ title, content, folder, authorId, authorName }),
+      body: JSON.stringify({ title, content, folder, authorId, authorName, authorRole }),
     });
     const created: WikiPage = await res.json();
     set(state => ({ pages: [...state.pages, created].sort((a, b) => a.title.localeCompare(b.title)) }));

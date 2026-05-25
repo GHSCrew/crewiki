@@ -20,7 +20,6 @@ export async function POST() {
     data: {
       name: "Coach",
       username: "coach",
-      email: "coach@crewwiki.local",
       passwordHash,
       role: "coach",
       status: "active",

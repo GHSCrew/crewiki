@@ -56,7 +56,7 @@ export default function ManageBar() {
       const folder = folderFromPath(relativePath, currentFolder);
 
       if (canEdit) {
-        await createPage(title, content, folder, user!.id, user!.name);
+        await createPage(title, content, folder, user!.id, user!.name, user!.role);
       } else {
         await addPageRequest({
           type: "create",

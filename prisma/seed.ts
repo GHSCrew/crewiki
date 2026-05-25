@@ -24,7 +24,6 @@ async function main() {
     data: {
       name: "Coach",
       username: "coach",
-      email: "coach@crewwiki.local",
       passwordHash,
       role: "coach",
       status: "active",

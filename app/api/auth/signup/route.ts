@@ -11,9 +11,7 @@ export async function POST(request: Request) {
   const slug = username.toLowerCase().replace(/[^a-z0-9_]/g, "");
   if (!slug) return Response.json({ error: "Invalid username." }, { status: 400 });
 
-  const existing = await prisma.user.findFirst({
-    where: { OR: [{ username: slug }, { email: slug }] },
-  });
+  const existing = await prisma.user.findFirst({ where: { username: slug } });
   if (existing) {
     return Response.json({ error: "That username is already taken." }, { status: 409 });
   }
@@ -25,7 +23,6 @@ export async function POST(request: Request) {
     data: {
       name: name.trim(),
       username: slug,
-      email: `${slug}@pending.crewwiki`,
       passwordHash,
       role: "athlete",
       status: "pending",

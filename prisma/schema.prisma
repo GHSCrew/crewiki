@@ -9,12 +9,10 @@ datasource db {
 model User {
   id           String   @id @default(cuid())
   name         String
-  email        String   @unique
   username     String?  @unique
   passwordHash String
   role         String   @default("athlete")
   status       String   @default("active")
-  avatarUrl    String?
   joinedAt     String
 
   comments      LineComment[]
@@ -135,9 +133,6 @@ model TeamMember {
   userId       String? @unique
   name         String
   role         String
-  boatClass    String?
-  seat         String?
-  side         String?
   username     String?
   registeredAt String
 

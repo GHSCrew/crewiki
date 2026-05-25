@@ -48,17 +48,17 @@ export async function PATCH(
       },
     });
     return Response.json({
-      id: updated.id, name: updated.name, email: updated.email,
+      id: updated.id, name: updated.name,
       username: updated.username ?? undefined,
-      role: updated.role as Role, avatarUrl: updated.avatarUrl ?? undefined, joinedAt: updated.joinedAt,
+      role: updated.role as Role, joinedAt: updated.joinedAt,
     });
   }
 
   const updated = await prisma.user.update({ where: { id }, data: { role: body.role } });
   return Response.json({
-    id: updated.id, name: updated.name, email: updated.email,
+    id: updated.id, name: updated.name,
     username: updated.username ?? undefined,
-    role: updated.role as Role, avatarUrl: updated.avatarUrl ?? undefined, joinedAt: updated.joinedAt,
+    role: updated.role as Role, joinedAt: updated.joinedAt,
   });
 }
 
