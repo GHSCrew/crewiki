@@ -1,5 +1,14 @@
 import prisma from "@/lib/prisma";
 
+export async function PATCH(request: Request) {
+  const { oldFolder, newFolder } = await request.json() as { oldFolder: string; newFolder: string };
+  if (!newFolder || oldFolder === newFolder) return Response.json({ error: "Invalid folder names" }, { status: 400 });
+  const today = new Date().toISOString().split("T")[0];
+  await prisma.wikiPage.updateMany({ where: { folder: oldFolder }, data: { folder: newFolder, updatedAt: today } });
+  const pages = await prisma.wikiPage.findMany({ where: { folder: newFolder } });
+  return Response.json(pages);
+}
+
 export async function GET() {
   const pages = await prisma.wikiPage.findMany({ orderBy: { title: "asc" } });
   return Response.json(pages);

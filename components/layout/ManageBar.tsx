@@ -26,13 +26,15 @@ function folderFromPath(relativePath: string, baseFolder: string): string {
 export default function ManageBar() {
   const pathname = usePathname();
   const { user, canEdit } = useAuth();
-  const { pages, createPage, deletePage, movePage, addPageRequest } = useWikiStore();
+  const { pages, createPage, deletePage, movePage, renamePage, addPageRequest } = useWikiStore();
 
   const slug = pathname.split("/")[2] === "content" ? pathname.split("/")[3] : undefined;
   const currentPage = slug ? pages.find(p => p.slug === slug) : undefined;
   const currentFolder = currentPage?.folder ?? "";
 
   const [moveFolder, setMoveFolder] = useState("");
+  const [renameTitle, setRenameTitle] = useState("");
+  const [showRename, setShowRename] = useState(false);
   const [importing, setImporting] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
@@ -122,6 +124,14 @@ export default function ManageBar() {
     }
   }
 
+  async function handleRename() {
+    if (!currentPage || !renameTitle.trim() || renameTitle.trim() === currentPage.title) return;
+    await renamePage(currentPage.slug, renameTitle.trim());
+    toast(`Renamed to "${renameTitle.trim()}"`, "success");
+    setShowRename(false);
+    setRenameTitle("");
+  }
+
   const btnBase: React.CSSProperties = {
     padding: "0.35rem 0.85rem",
     borderRadius: 6,
@@ -197,6 +207,29 @@ export default function ManageBar() {
               </button>
             )}
           </div>
+
+          {/* Rename article */}
+          {canEdit && !showRename && (
+            <button
+              onClick={() => { setRenameTitle(currentPage.title); setShowRename(true); }}
+              style={{ ...btnBase, background: "none", color: "var(--navy)", border: "1px solid var(--border)" }}
+            >
+              Rename
+            </button>
+          )}
+          {canEdit && showRename && (
+            <div style={{ display: "flex", alignItems: "center", gap: "0.4rem" }}>
+              <input
+                autoFocus
+                value={renameTitle}
+                onChange={e => setRenameTitle(e.target.value)}
+                onKeyDown={e => { if (e.key === "Enter") handleRename(); if (e.key === "Escape") setShowRename(false); }}
+                style={{ padding: "0.3rem 0.6rem", border: "1.5px solid var(--water)", borderRadius: 6, fontSize: "0.8rem", fontFamily: "'DM Sans', sans-serif", width: 200, outline: "none" }}
+              />
+              <button onClick={handleRename} style={{ ...btnBase, background: "var(--water)", color: "white", border: "none" }}>Save</button>
+              <button onClick={() => setShowRename(false)} style={{ ...btnBase, background: "none", color: "var(--text-muted)", border: "1px solid var(--border)" }}>✕</button>
+            </div>
+          )}
 
           <button
             onClick={() => setConfirmDelete(true)}

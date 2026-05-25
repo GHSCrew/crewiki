@@ -14,7 +14,9 @@ export default function AdminPage() {
   const [pages, setPages] = useState<WikiPage[]>([]);
   const [activeTab, setActiveTab] = useState<"users" | "pages" | "reset">("users");
   const [showResetConfirm, setShowResetConfirm] = useState(false);
+  const [showContentResetConfirm, setShowContentResetConfirm] = useState(false);
   const [resetting, setResetting] = useState(false);
+  const [contentResetting, setContentResetting] = useState(false);
 
   useEffect(() => {
     fetch("/api/users").then(r => r.json()).then(setUsers);
@@ -36,6 +38,14 @@ export default function AdminPage() {
     await fetch("/api/admin/reset", { method: "POST" });
     logout();
     router.push("/login");
+  }
+
+  async function handleContentReset() {
+    setContentResetting(true);
+    setShowContentResetConfirm(false);
+    await fetch("/api/admin/reset/content", { method: "POST" });
+    setPages([]);
+    setContentResetting(false);
   }
 
   async function changeRole(userId: string, newRole: Role) {
@@ -144,7 +154,23 @@ export default function AdminPage() {
 
       {/* Factory Reset */}
       {activeTab === "reset" && (
-        <div className="fade-in" style={{ maxWidth: 560 }}>
+        <div className="fade-in" style={{ maxWidth: 560, display: "flex", flexDirection: "column", gap: "1.25rem" }}>
+
+          {/* Content Reset */}
+          <div style={{ background: "white", border: "1.5px solid rgba(176,120,48,0.35)", borderRadius: 12, padding: "1.75rem 2rem" }}>
+            <h2 style={{ fontFamily: "'DM Serif Display', serif", fontSize: "1.4rem", color: "#a05a1a", marginBottom: "0.6rem" }}>Content Reset</h2>
+            <p style={{ fontSize: "0.9rem", color: "var(--text-muted)", lineHeight: 1.6, marginBottom: "1.5rem" }}>
+              Delete all wiki content — pages, edit suggestions, file requests, comments, and page history — while keeping all user accounts and the roster intact.
+            </p>
+            <button
+              onClick={() => setShowContentResetConfirm(true)}
+              disabled={contentResetting}
+              style={{ padding: "0.65rem 1.5rem", background: "#a05a1a", color: "white", border: "none", borderRadius: 8, fontFamily: "'DM Sans', sans-serif", fontSize: "0.95rem", fontWeight: 700, cursor: contentResetting ? "wait" : "pointer" }}
+            >
+              {contentResetting ? "Resetting…" : "Reset Content"}
+            </button>
+          </div>
+
           <div style={{ background: "white", border: "1.5px solid rgba(176,48,48,0.3)", borderRadius: 12, padding: "1.75rem 2rem" }}>
             <h2 style={{ fontFamily: "'DM Serif Display', serif", fontSize: "1.4rem", color: "#b03030", marginBottom: "0.6rem" }}>Factory Reset</h2>
             <p style={{ fontSize: "0.9rem", color: "var(--text-muted)", lineHeight: 1.6, marginBottom: "0.75rem" }}>
@@ -164,6 +190,15 @@ export default function AdminPage() {
         </div>
       )}
 
+      {showContentResetConfirm && (
+        <ConfirmDialog
+          title="Reset Content?"
+          message="This will permanently delete all wiki pages, suggestions, file requests, comments, and page history. User accounts and the roster will not be affected."
+          confirmLabel="Reset Content"
+          onConfirm={handleContentReset}
+          onCancel={() => setShowContentResetConfirm(false)}
+        />
+      )}
       {showResetConfirm && (
         <ConfirmDialog
           title="Factory Reset?"

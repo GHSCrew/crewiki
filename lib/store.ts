@@ -17,6 +17,8 @@ interface WikiStore {
   createPage: (title: string, content: string, folder: string, authorId: string, authorName: string) => Promise<WikiPage>;
   deletePage: (slug: string) => Promise<void>;
   movePage: (slug: string, newFolder: string) => Promise<void>;
+  renamePage: (slug: string, newTitle: string) => Promise<WikiPage>;
+  renameFolder: (oldName: string, newName: string) => Promise<void>;
   addSuggestion: (s: Omit<EditSuggestion, "id" | "createdAt">) => Promise<void>;
   updateSuggestionStatus: (id: string, status: EditSuggestion["status"], reviewedBy: string, note: string) => Promise<void>;
   addComment: (c: Omit<LineComment, "id" | "createdAt">) => Promise<void>;
@@ -80,6 +82,33 @@ export const useWikiStore = create<WikiStore>((set, get) => ({
     });
     const updated: WikiPage = await res.json();
     set(state => ({ pages: state.pages.map(p => p.slug === slug ? updated : p) }));
+  },
+
+  renamePage: async (slug, newTitle) => {
+    const res = await fetch(`/api/pages/${slug}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ title: newTitle }),
+    });
+    const updated: WikiPage = await res.json();
+    set(state => ({ pages: state.pages.map(p => p.slug === slug ? updated : p) }));
+    return updated;
+  },
+
+  renameFolder: async (oldName, newName) => {
+    const res = await fetch("/api/pages", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ oldFolder: oldName, newFolder: newName }),
+    });
+    const updatedPages: WikiPage[] = await res.json();
+    const updatedIds = new Set(updatedPages.map(p => p.id));
+    set(state => ({
+      pages: state.pages.map(p => {
+        const updated = updatedPages.find(u => u.id === p.id);
+        return updatedIds.has(p.id) && updated ? updated : p;
+      }),
+    }));
   },
 
   updatePage: async (slug, content, authorId, authorName, authorRole, message) => {
