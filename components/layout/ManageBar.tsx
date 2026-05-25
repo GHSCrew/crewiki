@@ -5,8 +5,6 @@ import { useAuth } from "@/lib/auth-context";
 import { useWikiStore } from "@/lib/store";
 import { toast } from "@/lib/toast";
 
-const NAMED_ROUTES = new Set(["suggestions", "team", "notifications", "admin", "folder"]);
-
 function readFileAsText(file: File): Promise<string> {
   return new Promise((res, rej) => {
     const r = new FileReader();
@@ -29,9 +27,8 @@ export default function ManageBar() {
   const { user, canEdit } = useAuth();
   const { pages, createPage, deletePage, movePage, addPageRequest } = useWikiStore();
 
-  const segment = pathname.split("/")[2];
-  const isArticlePage = !!segment && !NAMED_ROUTES.has(segment);
-  const currentPage = isArticlePage ? pages.find(p => p.slug === segment) : undefined;
+  const slug = pathname.split("/")[2] === "content" ? pathname.split("/")[3] : undefined;
+  const currentPage = slug ? pages.find(p => p.slug === slug) : undefined;
   const currentFolder = currentPage?.folder ?? "";
 
   const [moveFolder, setMoveFolder] = useState("");

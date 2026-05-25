@@ -1,14 +1,6 @@
 import prisma from "@/lib/prisma";
 import type { Role } from "@/types";
 
-function deserializePage(p: {
-  id: string; slug: string; title: string; content: string; folder: string;
-  authorId: string; authorName: string; createdAt: string; updatedAt: string;
-  version: number; youtubeLinks: string;
-}) {
-  return { ...p, youtubeLinks: JSON.parse(p.youtubeLinks) as string[] };
-}
-
 export async function GET(
   _request: Request,
   { params }: { params: Promise<{ slug: string }> }
@@ -16,7 +8,7 @@ export async function GET(
   const { slug } = await params;
   const page = await prisma.wikiPage.findUnique({ where: { slug } });
   if (!page) return Response.json({ error: "Not found" }, { status: 404 });
-  return Response.json(deserializePage(page));
+  return Response.json(page);
 }
 
 export async function PUT(
@@ -53,7 +45,7 @@ export async function PUT(
     }),
   ]);
 
-  return Response.json(deserializePage(updated));
+  return Response.json(updated);
 }
 
 export async function PATCH(
@@ -74,7 +66,7 @@ export async function PATCH(
       updatedAt: new Date().toISOString().split("T")[0],
     },
   });
-  return Response.json(deserializePage(updated));
+  return Response.json(updated);
 }
 
 export async function DELETE(

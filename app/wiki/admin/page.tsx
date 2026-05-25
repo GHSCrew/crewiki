@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth-context";
 import type { User, WikiPage, Role } from "@/types";
 
-const ROLE_ORDER: Role[] = ["admin", "coach", "captain", "athlete"];
+const ROLE_ORDER: Role[] = ["coach", "captain", "athlete"];
 
 export default function AdminPage() {
   const { user, canEdit } = useAuth();
@@ -22,7 +22,7 @@ export default function AdminPage() {
     return (
       <div style={{ padding: "3rem" }}>
         <h2 style={{ fontFamily: "'DM Serif Display', serif", color: "var(--navy)" }}>Access Denied</h2>
-        <p style={{ color: "var(--text-muted)", marginTop: "0.5rem" }}>You need coach or admin access to view this page.</p>
+        <p style={{ color: "var(--text-muted)", marginTop: "0.5rem" }}>You need coach access to view this page.</p>
         <button onClick={() => router.push("/wiki")} style={{ marginTop: "1rem", padding: "0.5rem 1rem", background: "var(--navy)", color: "white", border: "none", borderRadius: 6, cursor: "pointer" }}>← Back</button>
       </div>
     );
@@ -58,13 +58,13 @@ export default function AdminPage() {
       {activeTab === "users" && (
         <div className="fade-in">
           <p style={{ fontSize: "0.82rem", color: "var(--text-muted)", marginBottom: "1rem" }}>
-            Role permissions: <strong>Admin</strong> → full control · <strong>Coach/Captain</strong> → edit pages, approve suggestions · <strong>Athlete</strong> → read + suggest edits
+            Role permissions: <strong>Coach</strong> → edit pages, manage roles · <strong>Captain</strong> → edit pages, approve suggestions · <strong>Athlete</strong> → read + suggest edits
           </p>
           <div style={{ background: "white", border: "1px solid var(--border)", borderRadius: 12, overflow: "hidden" }}>
             <table style={{ width: "100%", borderCollapse: "collapse" }}>
               <thead>
                 <tr style={{ background: "var(--navy)" }}>
-                  {["Member", "Email", "Role", "Joined", "Actions"].map(h => (
+                  {["Member", "Username", "Role", "Joined", "Actions"].map(h => (
                     <th key={h} style={{ padding: "0.75rem 1rem", textAlign: "left", fontSize: "0.72rem", textTransform: "uppercase", letterSpacing: "0.06em", color: "var(--gold-light)", fontFamily: "'DM Sans', sans-serif", fontWeight: 600 }}>{h}</th>
                   ))}
                 </tr>
@@ -81,11 +81,11 @@ export default function AdminPage() {
                         {u.id === user?.id && <span style={{ fontSize: "0.68rem", background: "var(--gold-pale)", color: "var(--navy)", padding: "1px 6px", borderRadius: 4, fontWeight: 600 }}>You</span>}
                       </div>
                     </td>
-                    <td style={{ padding: "0.75rem 1rem", fontSize: "0.8rem", color: "var(--text-muted)" }}>{u.email}</td>
+                    <td style={{ padding: "0.75rem 1rem", fontSize: "0.8rem", color: "var(--text-muted)" }}>{(u as { username?: string }).username ?? u.email}</td>
                     <td style={{ padding: "0.75rem 1rem" }}><span className={`badge badge-${u.role}`}>{u.role}</span></td>
                     <td style={{ padding: "0.75rem 1rem", fontSize: "0.8rem", color: "var(--text-muted)" }}>{u.joinedAt}</td>
                     <td style={{ padding: "0.75rem 1rem" }}>
-                      {u.id !== user?.id && (
+                      {u.id !== user?.id && user?.role === "coach" && (
                         <select value={u.role} onChange={e => changeRole(u.id, e.target.value as Role)}
                           style={{ padding: "0.3rem 0.6rem", border: "1px solid var(--border)", borderRadius: 5, fontSize: "0.78rem", fontFamily: "'DM Sans', sans-serif", outline: "none", background: "white", cursor: "pointer" }}>
                           {ROLE_ORDER.map(r => <option key={r} value={r}>{r}</option>)}
@@ -122,7 +122,7 @@ export default function AdminPage() {
                     <td style={{ padding: "0.75rem 1rem", fontSize: "0.8rem" }}>{p.authorName}</td>
                     <td style={{ padding: "0.75rem 1rem", fontSize: "0.8rem", color: "var(--text-muted)" }}>{p.updatedAt}</td>
                     <td style={{ padding: "0.75rem 1rem" }}>
-                      <a href={`/wiki/${p.slug}`} style={{ fontSize: "0.78rem", color: "var(--water)", textDecoration: "none" }}>View →</a>
+                      <a href={`/wiki/content/${p.slug}`} style={{ fontSize: "0.78rem", color: "var(--water)", textDecoration: "none" }}>View →</a>
                     </td>
                   </tr>
                 ))}

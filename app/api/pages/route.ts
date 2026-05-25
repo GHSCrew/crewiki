@@ -1,16 +1,8 @@
 import prisma from "@/lib/prisma";
 
-function deserializePage(p: {
-  id: string; slug: string; title: string; content: string; folder: string;
-  authorId: string; authorName: string; createdAt: string; updatedAt: string;
-  version: number; youtubeLinks: string;
-}) {
-  return { ...p, youtubeLinks: JSON.parse(p.youtubeLinks) as string[] };
-}
-
 export async function GET() {
   const pages = await prisma.wikiPage.findMany({ orderBy: { title: "asc" } });
-  return Response.json(pages.map(deserializePage));
+  return Response.json(pages);
 }
 
 export async function POST(request: Request) {
@@ -27,10 +19,10 @@ export async function POST(request: Request) {
 
   const now = new Date().toISOString().split("T")[0];
   const page = await prisma.wikiPage.create({
-    data: { slug, title, content, folder, authorId, authorName, createdAt: now, updatedAt: now, version: 1, youtubeLinks: "[]" },
+    data: { slug, title, content, folder, authorId, authorName, createdAt: now, updatedAt: now, version: 1 },
   });
   await prisma.pageVersion.create({
     data: { pageId: page.id, content, authorId, authorName, authorRole: "coach", message: "Initial import", createdAt: now, version: 1 },
   });
-  return Response.json(deserializePage(page), { status: 201 });
+  return Response.json(page, { status: 201 });
 }

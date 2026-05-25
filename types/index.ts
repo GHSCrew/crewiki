@@ -1,4 +1,4 @@
-export type Role = "athlete" | "captain" | "coach" | "admin";
+export type Role = "athlete" | "captain" | "coach";
 
 export interface User {
   id: string;
@@ -20,7 +20,6 @@ export interface WikiPage {
   createdAt: string;
   updatedAt: string;
   version: number;
-  youtubeLinks?: string[];
 }
 
 export interface PageVersion {
@@ -92,10 +91,7 @@ export interface TeamMember {
   userId?: string;
   name: string;
   role: Role;
-  boatClass?: string;
-  seat?: string;
-  side?: "port" | "starboard" | "cox";
-  email?: string;
+  username?: string;
   registeredAt: string;
 }
 
@@ -123,11 +119,10 @@ export interface PageRequest {
   reviewNote?: string;
 }
 
-export type Permission = "view" | "suggest" | "edit" | "admin";
+export type Permission = "view" | "suggest" | "edit";
 
 export const ROLE_PERMISSIONS: Record<Role, Permission> = {
   athlete: "suggest",
   captain: "edit",
   coach: "edit",
-  admin: "admin",
 };

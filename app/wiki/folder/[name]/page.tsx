@@ -10,7 +10,7 @@ export default function FolderPage() {
   const { pages } = useWikiStore();
 
   const folderPages = pages
-    .filter(p => p.folder === name)
+    .filter(p => name === "Root" ? p.folder === "" : p.folder === name)
     .sort((a, b) => a.title.localeCompare(b.title));
 
   return (
@@ -44,7 +44,7 @@ export default function FolderPage() {
       ) : (
         <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
           {folderPages.map(page => (
-            <Link key={page.slug} href={`/wiki/${page.slug}`} style={{ textDecoration: "none" }}>
+            <Link key={page.slug} href={`/wiki/content/${page.slug}`} style={{ textDecoration: "none" }}>
               <div
                 style={{ background: "white", border: "1px solid var(--border)", borderRadius: 12, padding: "1.25rem 1.5rem", cursor: "pointer", transition: "border-color 0.15s, box-shadow 0.15s" }}
                 onMouseEnter={e => { e.currentTarget.style.borderColor = "var(--gold)"; e.currentTarget.style.boxShadow = "0 2px 12px rgba(0,0,0,0.06)"; }}

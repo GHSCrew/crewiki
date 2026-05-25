@@ -8,13 +8,11 @@ interface AuthContextType {
   login: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
   logout: () => void;
   canEdit: boolean;
-  canAdmin: boolean;
 }
 
 const AuthContext = createContext<AuthContextType | null>(null);
 
-const EDIT_ROLES: Role[] = ["coach", "captain", "admin"];
-const ADMIN_ROLES: Role[] = ["admin"];
+const EDIT_ROLES: Role[] = ["coach", "captain"];
 
 type AuthState = { user: User | null; loading: boolean };
 type AuthAction =
@@ -41,11 +39,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     dispatch({ type: "init", user: initialUser });
   }, []);
 
-  const login = useCallback(async (email: string, password: string) => {
+  const login = useCallback(async (username: string, password: string) => {
     const res = await fetch("/api/auth", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email, password }),
+      body: JSON.stringify({ username, password }),
     });
     if (!res.ok) {
       const { error } = await res.json() as { error: string };
@@ -67,7 +65,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       user, loading,
       login, logout,
       canEdit: !!user && EDIT_ROLES.includes(user.role),
-      canAdmin: !!user && ADMIN_ROLES.includes(user.role),
     }}>
       {children}
     </AuthContext.Provider>

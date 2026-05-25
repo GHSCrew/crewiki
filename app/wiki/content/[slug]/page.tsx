@@ -90,7 +90,7 @@ function renderInline(raw: string): string {
     const parts = inner.split("|");
     const target = parts[0].trim();
     const label = (parts[1] ?? parts[0]).trim();
-    return `<a class="wikilink" href="/wiki/${slugify(target)}">${label}</a>`;
+    return `<a class="wikilink" href="/wiki/content/${slugify(target)}">${label}</a>`;
   });
   s = s.replace(/\[(.+?)\]\((.+?)\)/g, '<a href="$2" target="_blank" rel="noopener noreferrer">$1</a>');
   return s;
@@ -269,6 +269,24 @@ function extractToc(content: string): Array<{ level: number; text: string; id: s
     });
 }
 
+const YT_RE = /^https?:\/\/(?:www\.)?(?:youtube\.com|youtu\.be)\S+$/;
+
+function extractYoutubeFromMarkdown(content: string): { urls: string[]; strippedContent: string } {
+  const lines = content.split("\n");
+  const urls: string[] = [];
+  let i = 0;
+  while (i < lines.length) {
+    const m = lines[i].match(/^> (\S+)$/);
+    if (m && YT_RE.test(m[1])) {
+      urls.push(m[1]);
+      i++;
+    } else {
+      break;
+    }
+  }
+  return { urls, strippedContent: lines.slice(i).join("\n") };
+}
+
 // ─── Component ────────────────────────────────────────────────────────────────
 
 export default function WikiPageView() {
@@ -298,14 +316,15 @@ export default function WikiPageView() {
   const [saved, setSaved] = useState(false);
   const [expandedSug, setExpandedSug] = useState<string | null>(null);
 
-  // Strip the leading H1 since the page title is already shown above the tabs
-  const contentBody = useMemo(
-    () => (page ? page.content.replace(/^# [^\n]*\n?/, "") : ""),
+  // Strip the leading H1, then extract any leading YouTube blockquote lines
+  const { youtubeUrls, displayContent } = useMemo(() => {
+    const body = page ? page.content.replace(/^# [^\n]*\n?/, "") : "";
+    const { urls, strippedContent } = extractYoutubeFromMarkdown(body);
+    return { youtubeUrls: urls, displayContent: strippedContent };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [page?.content]
-  );
-  const renderedHtml = useMemo(() => renderMarkdown(contentBody), [contentBody]);
-  const toc = useMemo(() => extractToc(contentBody), [contentBody]);
+  }, [page?.content]);
+  const renderedHtml = useMemo(() => renderMarkdown(displayContent), [displayContent]);
+  const toc = useMemo(() => extractToc(displayContent), [displayContent]);
   const sortedVersions = useMemo(() => [...versions].sort((a, b) => a.version - b.version), [versions]);
   const lines = useMemo(() => (page?.content ?? "").split("\n"), [page?.content]);
   const blame = useMemo(
@@ -364,12 +383,12 @@ export default function WikiPageView() {
   }
 
   return (
-    <div style={{ padding: "2rem 3rem", maxWidth: 1100 }}>
+    <div style={{ padding: "2rem 3rem" }}>
       {/* Breadcrumb */}
       <div style={{ fontSize: "0.8rem", color: "var(--text-muted)", marginBottom: "1rem" }}>
         <span style={{ cursor: "pointer", color: "var(--water)" }} onClick={() => router.push("/wiki")}>Wiki</span>
         <span style={{ margin: "0 0.4rem" }}>›</span>
-        <span style={{ cursor: "pointer", color: "var(--water)" }} onClick={() => router.push(`/wiki/folder/${encodeURIComponent(page.folder)}`)}>{page.folder}</span>
+        <span style={{ cursor: "pointer", color: "var(--water)" }} onClick={() => page.folder ? router.push(`/wiki/folder/${encodeURIComponent(page.folder)}`) : router.push("/wiki")}>{page.folder || "Root"}</span>
         <span style={{ margin: "0 0.4rem" }}>›</span>
         <span style={{ color: "var(--text)" }}>{page.title}</span>
       </div>
@@ -387,35 +406,35 @@ export default function WikiPageView() {
         <span>{pageSuggestions.filter((s) => s.status === "open").length} open suggestion{pageSuggestions.filter((s) => s.status === "open").length !== 1 ? "s" : ""}</span>
       </div>
 
-      {/* YouTube links */}
-      {page.youtubeLinks && page.youtubeLinks.length > 0 && (
-        <div style={{ background: "linear-gradient(135deg, #0a1628 0%, #1e3a5f 100%)", borderRadius: 12, padding: "1rem 1.25rem", marginBottom: "1.5rem", display: "flex", alignItems: "center", gap: "1rem" }}>
-          <span style={{ fontSize: "1.5rem" }}>▶️</span>
-          <div>
-            <div style={{ color: "var(--gold)", fontSize: "0.75rem", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: "0.25rem" }}>Related Videos</div>
-            {page.youtubeLinks.map((url, idx) => (
-              <a key={idx} href={url} target="_blank" rel="noopener noreferrer" style={{ color: "white", fontSize: "0.875rem", display: "block" }}>Watch on YouTube →</a>
-            ))}
-          </div>
-        </div>
-      )}
-
       {/* ── READ ── */}
       {viewMode === "read" && (
         <div className="fade-in" style={{ display: "flex", gap: "3rem", alignItems: "flex-start" }}>
           {/* Rendered article */}
-          <div
-            className="wiki-content"
-            style={{ flex: 1, minWidth: 0 }}
-            dangerouslySetInnerHTML={{ __html: renderedHtml }}
-          />
+          <div style={{ flex: 1, minWidth: 0 }}>
+            {youtubeUrls.length > 0 && (
+              <div style={{ background: "linear-gradient(135deg, #0a1628 0%, #1e3a5f 100%)", borderRadius: 12, padding: "1rem 1.25rem", marginBottom: "1.5rem", display: "flex", alignItems: "center", gap: "1rem" }}>
+                <span style={{ fontSize: "1.5rem" }}>▶️</span>
+                <div>
+                  <div style={{ color: "var(--gold)", fontSize: "0.75rem", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: "0.25rem" }}>Related Videos</div>
+                  {youtubeUrls.map((url, idx) => (
+                    <a key={idx} href={url} target="_blank" rel="noopener noreferrer" style={{ color: "white", fontSize: "0.875rem", display: "block" }}>Watch on YouTube →</a>
+                  ))}
+                </div>
+              </div>
+            )}
+            <div
+              className="wiki-content"
+              dangerouslySetInnerHTML={{ __html: renderedHtml }}
+            />
+          </div>
 
           {/* Table of contents */}
           {toc.length > 1 && (
-            <nav className="toc" style={{ width: 196, flexShrink: 0 }}>
+            <nav className="toc" style={{ width: 220, flexShrink: 0, position: "sticky", top: "1.5rem", alignSelf: "flex-start" }}>
               <div className="toc-title">On this page</div>
               {toc.map((item, idx) => (
-                <a key={idx} href={`#${item.id}`} className={`toc-link toc-h${item.level}`}>
+                <a key={idx} href={`#${item.id}`} className={`toc-link toc-h${item.level}`}
+                  onClick={e => { e.preventDefault(); document.getElementById(item.id)?.scrollIntoView({ behavior: "smooth" }); }}>
                   {item.text}
                 </a>
               ))}

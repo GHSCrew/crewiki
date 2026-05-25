@@ -1,7 +1,6 @@
 "use client";
 import { useAuth } from "@/lib/auth-context";
 import { useWikiStore } from "@/lib/store";
-import Link from "next/link";
 
 const TYPE_ICONS: Record<string, string> = {
   suggestion_opened: "✏️",

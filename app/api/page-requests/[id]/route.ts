@@ -1,13 +1,5 @@
 import prisma from "@/lib/prisma";
 
-function deserializePage(p: {
-  id: string; slug: string; title: string; content: string; folder: string;
-  authorId: string; authorName: string; createdAt: string; updatedAt: string;
-  version: number; youtubeLinks: string;
-}) {
-  return { ...p, youtubeLinks: JSON.parse(p.youtubeLinks) as string[] };
-}
-
 export async function PATCH(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
@@ -44,7 +36,6 @@ export async function PATCH(
           createdAt: now,
           updatedAt: now,
           version: 1,
-          youtubeLinks: "[]",
         },
       });
       await prisma.pageVersion.create({
@@ -59,20 +50,17 @@ export async function PATCH(
           version: 1,
         },
       });
-      const allPages = await prisma.wikiPage.findMany({ orderBy: { title: "asc" } });
-      pages = allPages.map(deserializePage);
+      pages = await prisma.wikiPage.findMany({ orderBy: { title: "asc" } });
     } else if (req.type === "delete" && req.pageSlug) {
       const page = await prisma.wikiPage.findUnique({ where: { slug: req.pageSlug } });
       if (page) await prisma.wikiPage.delete({ where: { slug: req.pageSlug } });
-      const allPages = await prisma.wikiPage.findMany({ orderBy: { title: "asc" } });
-      pages = allPages.map(deserializePage);
+      pages = await prisma.wikiPage.findMany({ orderBy: { title: "asc" } });
     } else if (req.type === "move" && req.pageSlug && req.newFolder) {
       await prisma.wikiPage.update({
         where: { slug: req.pageSlug },
         data: { folder: req.newFolder, updatedAt: now },
       });
-      const allPages = await prisma.wikiPage.findMany({ orderBy: { title: "asc" } });
-      pages = allPages.map(deserializePage);
+      pages = await prisma.wikiPage.findMany({ orderBy: { title: "asc" } });
     }
   }
 

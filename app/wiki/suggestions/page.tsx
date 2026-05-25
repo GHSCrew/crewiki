@@ -137,7 +137,7 @@ export default function SuggestionsPage() {
         <div key={s.id} className="fade-in" style={{ background: "white", border: "1px solid var(--border)", borderRadius: 12, padding: "1.25rem", marginBottom: "1rem", borderLeft: `4px solid ${s.status === "open" ? "var(--water)" : s.status === "approved" || s.status === "merged" ? "var(--gold)" : "#e74c3c"}` }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "0.75rem" }}>
             <div>
-              <Link href={`/wiki/${s.pageSlug}`} style={{ textDecoration: "none" }}>
+              <Link href={`/wiki/content/${s.pageSlug}`} style={{ textDecoration: "none" }}>
                 <span style={{ fontFamily: "'DM Serif Display', serif", fontSize: "1.1rem", color: "var(--navy)" }}>{s.pageTitle}</span>
               </Link>
               <div style={{ display: "flex", gap: "0.5rem", alignItems: "center", marginTop: "0.25rem" }}>

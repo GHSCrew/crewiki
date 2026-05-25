@@ -10,8 +10,10 @@ model User {
   id           String   @id @default(cuid())
   name         String
   email        String   @unique
+  username     String?  @unique
   passwordHash String
   role         String   @default("athlete")
+  status       String   @default("active")
   avatarUrl    String?
   joinedAt     String
 
@@ -33,8 +35,6 @@ model WikiPage {
   createdAt    String
   updatedAt    String
   version      Int    @default(1)
-  youtubeLinks String @default("[]")
-
   versions    PageVersion[]
   comments    LineComment[]
   suggestions EditSuggestion[]
@@ -138,7 +138,7 @@ model TeamMember {
   boatClass    String?
   seat         String?
   side         String?
-  email        String?
+  username     String?
   registeredAt String
 
   user User? @relation(fields: [userId], references: [id])

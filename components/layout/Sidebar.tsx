@@ -25,8 +25,8 @@ function buildTree(pages: WikiPage[]): Record<string, FolderNode> {
       }
     }
     if (parts.length === 0) {
-      if (!root["Uncategorized"]) root["Uncategorized"] = { pages: [], children: {} };
-      root["Uncategorized"].pages.push(page);
+      if (!root["Root"]) root["Root"] = { pages: [], children: {} };
+      root["Root"].pages.push(page);
     }
   }
   return root;
@@ -62,9 +62,9 @@ function FolderTree({ node, name, depth, pathname, folderPath }: {
       {open && (
         <>
           {node.pages.map(p => {
-            const active = pathname === `/wiki/${p.slug}`;
+            const active = pathname === `/wiki/content/${p.slug}`;
             return (
-              <Link key={p.slug} href={`/wiki/${p.slug}`} style={{ textDecoration: "none" }}>
+              <Link key={p.slug} href={`/wiki/content/${p.slug}`} style={{ textDecoration: "none" }}>
                 <div style={{ padding: `0.3rem 0.75rem 0.3rem ${1.5 + indent / 16}rem`, fontSize: "0.82rem", color: active ? "var(--gold)" : "rgba(255,255,255,0.65)", background: active ? "rgba(201,168,76,0.12)" : "transparent", borderRadius: 6, cursor: "pointer", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                   {p.title}
                 </div>
@@ -85,6 +85,7 @@ const NAV_ITEMS = [
   { href: "/wiki/suggestions", label: "Suggestions", icon: "✏️" },
   { href: "/wiki/team", label: "Team", icon: "⛵" },
   { href: "/wiki/notifications", label: "Notifications", icon: "🔔" },
+  { href: "/wiki/settings", label: "Settings", icon: "⚙" },
 ];
 
 const COACH_NAV = [

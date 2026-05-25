@@ -3,15 +3,22 @@ import prisma from "@/lib/prisma";
 import type { Role } from "@/types";
 
 export async function POST(request: Request) {
-  const { email, password } = await request.json() as { email: string; password: string };
+  const { username, password } = await request.json() as { username: string; password: string };
 
-  if (!email || !password) {
-    return Response.json({ error: "Email and password required." }, { status: 400 });
+  if (!username || !password) {
+    return Response.json({ error: "Username and password required." }, { status: 400 });
   }
 
-  const user = await prisma.user.findUnique({ where: { email: email.toLowerCase() } });
+  const user = await prisma.user.findFirst({
+    where: { OR: [{ username: username.toLowerCase() }, { email: username.toLowerCase() }] },
+  });
+
   if (!user) {
-    return Response.json({ error: "No account found with that email." }, { status: 401 });
+    return Response.json({ error: "No account found with that username." }, { status: 401 });
+  }
+
+  if (user.status === "pending") {
+    return Response.json({ error: "Your account is pending approval by a coach or captain." }, { status: 403 });
   }
 
   const valid = await compare(password, user.passwordHash);
@@ -23,6 +30,7 @@ export async function POST(request: Request) {
     id: user.id,
     name: user.name,
     email: user.email,
+    username: user.username ?? undefined,
     role: user.role as Role,
     avatarUrl: user.avatarUrl ?? undefined,
     joinedAt: user.joinedAt,
