@@ -9,7 +9,7 @@
     "start": "next start",
     "lint": "eslint",
     "db:push": "tsx --env-file=.env scripts/db-push.ts",
-    "db:seed": "prisma db seed",
+    "db:seed": "tsx --env-file=.env prisma/seed.ts",
     "db:studio": "prisma studio"
   },
   "prisma": {
