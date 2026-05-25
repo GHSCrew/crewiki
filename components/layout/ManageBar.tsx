@@ -4,6 +4,7 @@ import { usePathname } from "next/navigation";
 import { useAuth } from "@/lib/auth-context";
 import { useWikiStore } from "@/lib/store";
 import { toast } from "@/lib/toast";
+import ConfirmDialog from "@/components/ConfirmDialog";
 
 function readFileAsText(file: File): Promise<string> {
   return new Promise((res, rej) => {
@@ -135,6 +136,7 @@ export default function ManageBar() {
   };
 
   return (
+    <>
     <div style={{
       borderBottom: "1px solid var(--border)",
       background: "var(--surface-raised)",
@@ -196,31 +198,29 @@ export default function ManageBar() {
             )}
           </div>
 
-          {/* Delete — inline confirmation, no native alert */}
-          {!confirmDelete ? (
-            <button
-              onClick={() => setConfirmDelete(true)}
-              style={{ ...btnBase, background: "rgba(153,26,26,0.08)", color: "#b03030", border: "1px solid rgba(153,26,26,0.2)" }}
-            >
-              {canEdit ? "Delete page" : "Request delete"}
-            </button>
-          ) : (
-            <div style={{ display: "flex", alignItems: "center", gap: "0.4rem", padding: "0.25rem 0.6rem", background: "rgba(153,26,26,0.06)", borderRadius: 6, border: "1px solid rgba(153,26,26,0.2)" }}>
-              <span style={{ fontSize: "0.78rem", color: "#b03030", fontWeight: 600 }}>
-                {canEdit ? `Delete "${currentPage.title}"?` : `Request delete?`}
-              </span>
-              <button onClick={handleDelete} style={{ padding: "0.25rem 0.6rem", background: "#b03030", color: "white", border: "none", borderRadius: 4, fontSize: "0.75rem", fontWeight: 700, cursor: "pointer" }}>
-                Yes
-              </button>
-              <button onClick={() => setConfirmDelete(false)} style={{ padding: "0.25rem 0.6rem", background: "none", color: "var(--text-muted)", border: "1px solid var(--border)", borderRadius: 4, fontSize: "0.75rem", cursor: "pointer" }}>
-                No
-              </button>
-            </div>
-          )}
+          <button
+            onClick={() => setConfirmDelete(true)}
+            style={{ ...btnBase, background: "rgba(153,26,26,0.08)", color: "#b03030", border: "1px solid rgba(153,26,26,0.2)" }}
+          >
+            {canEdit ? "Delete page" : "Request delete"}
+          </button>
         </>
       )}
 
       {importing && <span style={{ fontSize: "0.78rem", color: "var(--text-muted)" }}>Importing…</span>}
     </div>
+    {confirmDelete && currentPage && (
+      <ConfirmDialog
+        title={canEdit ? "Delete Page?" : "Request Delete?"}
+        message={canEdit
+          ? <><strong style={{ color: "var(--navy)" }}>&ldquo;{currentPage.title}&rdquo;</strong> will be permanently deleted.</>
+          : <>Submit a deletion request for <strong style={{ color: "var(--navy)" }}>&ldquo;{currentPage.title}&rdquo;</strong>?</>
+        }
+        confirmLabel={canEdit ? "Delete" : "Submit Request"}
+        onConfirm={handleDelete}
+        onCancel={() => setConfirmDelete(false)}
+      />
+    )}
+    </>
   );
 }

@@ -7,7 +7,7 @@ export async function PATCH(
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id } = await params;
-  const body = await request.json() as { role?: Role; activate?: boolean; currentPassword?: string; newPassword?: string };
+  const body = await request.json() as { role?: Role; activate?: boolean; currentPassword?: string; newPassword?: string; name?: string; username?: string };
 
   if (body.activate) {
     const user = await prisma.user.update({ where: { id }, data: { status: "active" } });
@@ -28,9 +28,36 @@ export async function PATCH(
     return Response.json({ ok: true });
   }
 
+  if (body.name !== undefined || body.username !== undefined) {
+    if (body.username !== undefined) {
+      const taken = await prisma.user.findFirst({ where: { username: body.username, NOT: { id } } });
+      if (taken) return Response.json({ error: "Username already taken." }, { status: 409 });
+    }
+    const updated = await prisma.user.update({
+      where: { id },
+      data: {
+        ...(body.name !== undefined && { name: body.name }),
+        ...(body.username !== undefined && { username: body.username || null }),
+      },
+    });
+    await prisma.teamMember.updateMany({
+      where: { userId: id },
+      data: {
+        ...(body.name !== undefined && { name: body.name }),
+        ...(body.username !== undefined && { username: body.username || null }),
+      },
+    });
+    return Response.json({
+      id: updated.id, name: updated.name, email: updated.email,
+      username: updated.username ?? undefined,
+      role: updated.role as Role, avatarUrl: updated.avatarUrl ?? undefined, joinedAt: updated.joinedAt,
+    });
+  }
+
   const updated = await prisma.user.update({ where: { id }, data: { role: body.role } });
   return Response.json({
     id: updated.id, name: updated.name, email: updated.email,
+    username: updated.username ?? undefined,
     role: updated.role as Role, avatarUrl: updated.avatarUrl ?? undefined, joinedAt: updated.joinedAt,
   });
 }

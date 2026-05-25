@@ -1,12 +1,7 @@
-import { PrismaClient } from "@prisma/client";
-import { PrismaBetterSqlite3 } from "@prisma/adapter-better-sqlite3";
 import { hash } from "bcryptjs";
-import path from "node:path";
+import prisma from "@/lib/prisma";
 
-const adapter = new PrismaBetterSqlite3({ url: path.join(process.cwd(), "prisma/dev.db") });
-const prisma = new PrismaClient({ adapter } as ConstructorParameters<typeof PrismaClient>[0]);
-
-async function main() {
+export async function POST() {
   await prisma.$transaction([
     prisma.notification.deleteMany(),
     prisma.editSuggestion.deleteMany(),
@@ -19,6 +14,7 @@ async function main() {
   ]);
 
   const passwordHash = await hash("coach", 12);
+  const today = new Date().toISOString().split("T")[0];
 
   const coach = await prisma.user.create({
     data: {
@@ -28,7 +24,7 @@ async function main() {
       passwordHash,
       role: "coach",
       status: "active",
-      joinedAt: new Date().toISOString().split("T")[0],
+      joinedAt: today,
     },
   });
 
@@ -38,14 +34,9 @@ async function main() {
       name: coach.name,
       role: "coach",
       username: "coach",
-      registeredAt: coach.joinedAt,
+      registeredAt: today,
     },
   });
 
-  console.log("Database seeded.");
-  console.log("Coach login — username: coach  password: coach");
+  return Response.json({ ok: true });
 }
-
-main()
-  .catch(console.error)
-  .finally(() => prisma.$disconnect());

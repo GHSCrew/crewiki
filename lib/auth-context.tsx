@@ -7,6 +7,7 @@ interface AuthContextType {
   loading: boolean;
   login: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
   logout: () => void;
+  updateUser: (patch: Partial<User>) => void;
   canEdit: boolean;
 }
 
@@ -17,12 +18,14 @@ const EDIT_ROLES: Role[] = ["coach", "captain"];
 type AuthState = { user: User | null; loading: boolean };
 type AuthAction =
   | { type: "init"; user: User | null }
-  | { type: "set_user"; user: User | null };
+  | { type: "set_user"; user: User | null }
+  | { type: "patch_user"; patch: Partial<User> };
 
 function authReducer(state: AuthState, action: AuthAction): AuthState {
   switch (action.type) {
     case "init": return { user: action.user, loading: false };
     case "set_user": return { ...state, user: action.user };
+    case "patch_user": return state.user ? { ...state, user: { ...state.user, ...action.patch } } : state;
     default: return state;
   }
 }
@@ -38,6 +41,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     } catch {}
     dispatch({ type: "init", user: initialUser });
   }, []);
+
+  useEffect(() => {
+    if (user) localStorage.setItem("crewwiki_user", JSON.stringify(user));
+  }, [user]);
 
   const login = useCallback(async (username: string, password: string) => {
     const res = await fetch("/api/auth", {
@@ -60,10 +67,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     localStorage.removeItem("crewwiki_user");
   }, []);
 
+  const updateUser = useCallback((patch: Partial<User>) => {
+    dispatch({ type: "patch_user", patch });
+  }, []);
+
   return (
     <AuthContext.Provider value={{
       user, loading,
-      login, logout,
+      login, logout, updateUser,
       canEdit: !!user && EDIT_ROLES.includes(user.role),
     }}>
       {children}

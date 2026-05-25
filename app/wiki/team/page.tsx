@@ -1,9 +1,11 @@
 "use client";
 import { useState, useEffect } from "react";
 import { useAuth } from "@/lib/auth-context";
+import ConfirmDialog from "@/components/ConfirmDialog";
 import type { TeamMember, Role } from "@/types";
 
 interface PendingUser { id: string; name: string; username?: string; joinedAt: string; }
+interface ConfirmState { id: string; name: string; }
 
 export default function TeamPage() {
   const { user, canEdit } = useAuth();
@@ -11,6 +13,8 @@ export default function TeamPage() {
   const [pending, setPending] = useState<PendingUser[]>([]);
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState({ name: "", role: "athlete" as Role, username: "" });
+  const [confirmPending, setConfirmPending] = useState<ConfirmState | null>(null);
+  const [confirmReject, setConfirmReject] = useState<ConfirmState | null>(null);
 
   useEffect(() => {
     fetch("/api/team").then(r => r.json()).then(setMembers);
@@ -38,10 +42,15 @@ export default function TeamPage() {
     }
   }
 
-  async function handleDeregister(id: string, name: string) {
-    if (!window.confirm(`Remove ${name} from the roster?`)) return;
-    await fetch(`/api/team/${id}`, { method: "DELETE" });
-    setMembers(prev => prev.filter(m => m.id !== id));
+  function handleDeregister(id: string, name: string) {
+    setConfirmPending({ id, name });
+  }
+
+  async function confirmDeregister() {
+    if (!confirmPending) return;
+    await fetch(`/api/team/${confirmPending.id}`, { method: "DELETE" });
+    setMembers(prev => prev.filter(m => m.id !== confirmPending.id));
+    setConfirmPending(null);
   }
 
   async function handleActivate(pendingUser: PendingUser) {
@@ -55,9 +64,15 @@ export default function TeamPage() {
     setMembers(updated);
   }
 
-  async function handleReject(id: string) {
-    await fetch(`/api/users/${id}`, { method: "DELETE" });
-    setPending(prev => prev.filter(p => p.id !== id));
+  function handleReject(p: PendingUser) {
+    setConfirmReject({ id: p.id, name: p.name });
+  }
+
+  async function confirmRejectUser() {
+    if (!confirmReject) return;
+    await fetch(`/api/users/${confirmReject.id}`, { method: "DELETE" });
+    setPending(prev => prev.filter(p => p.id !== confirmReject.id));
+    setConfirmReject(null);
   }
 
   return (
@@ -99,7 +114,7 @@ export default function TeamPage() {
                     style={{ padding: "0.3rem 0.7rem", background: "var(--navy)", color: "var(--gold)", border: "none", borderRadius: 5, fontSize: "0.75rem", fontWeight: 600, cursor: "pointer" }}>
                     Activate
                   </button>
-                  <button onClick={() => handleReject(p.id)}
+                  <button onClick={() => handleReject(p)}
                     style={{ padding: "0.3rem 0.7rem", background: "none", color: "#b03030", border: "1px solid rgba(153,26,26,0.25)", borderRadius: 5, fontSize: "0.75rem", cursor: "pointer" }}>
                     Reject
                   </button>
@@ -140,6 +155,25 @@ export default function TeamPage() {
             <button type="button" onClick={() => setShowForm(false)} style={{ padding: "0.6rem 1rem", background: "none", color: "var(--text-muted)", border: "1px solid var(--border)", borderRadius: 7, cursor: "pointer", fontFamily: "'DM Sans', sans-serif" }}>Cancel</button>
           </div>
         </form>
+      )}
+
+      {confirmPending && (
+        <ConfirmDialog
+          title="Remove from Roster?"
+          message={<>Remove <strong style={{ color: "var(--navy)" }}>{confirmPending.name}</strong> from the roster? This cannot be undone.</>}
+          confirmLabel="Remove"
+          onConfirm={confirmDeregister}
+          onCancel={() => setConfirmPending(null)}
+        />
+      )}
+      {confirmReject && (
+        <ConfirmDialog
+          title="Reject Signup?"
+          message={<>Reject <strong style={{ color: "var(--navy)" }}>{confirmReject.name}</strong>&apos;s signup request and delete their account?</>}
+          confirmLabel="Reject"
+          onConfirm={confirmRejectUser}
+          onCancel={() => setConfirmReject(null)}
+        />
       )}
 
       {/* Roster by role */}

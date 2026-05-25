@@ -2,16 +2,19 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth-context";
+import ConfirmDialog from "@/components/ConfirmDialog";
 import type { User, WikiPage, Role } from "@/types";
 
 const ROLE_ORDER: Role[] = ["coach", "captain", "athlete"];
 
 export default function AdminPage() {
-  const { user, canEdit } = useAuth();
+  const { user, canEdit, logout } = useAuth();
   const router = useRouter();
   const [users, setUsers] = useState<User[]>([]);
   const [pages, setPages] = useState<WikiPage[]>([]);
-  const [activeTab, setActiveTab] = useState<"users" | "pages">("users");
+  const [activeTab, setActiveTab] = useState<"users" | "pages" | "reset">("users");
+  const [showResetConfirm, setShowResetConfirm] = useState(false);
+  const [resetting, setResetting] = useState(false);
 
   useEffect(() => {
     fetch("/api/users").then(r => r.json()).then(setUsers);
@@ -26,6 +29,13 @@ export default function AdminPage() {
         <button onClick={() => router.push("/wiki")} style={{ marginTop: "1rem", padding: "0.5rem 1rem", background: "var(--navy)", color: "white", border: "none", borderRadius: 6, cursor: "pointer" }}>← Back</button>
       </div>
     );
+  }
+
+  async function handleReset() {
+    setResetting(true);
+    await fetch("/api/admin/reset", { method: "POST" });
+    logout();
+    router.push("/login");
   }
 
   async function changeRole(userId: string, newRole: Role) {
@@ -46,10 +56,10 @@ export default function AdminPage() {
 
       {/* Tabs */}
       <div style={{ display: "flex", gap: "0.25rem", borderBottom: "2px solid var(--border)", marginBottom: "1.5rem" }}>
-        {(["users", "pages"] as const).map(t => (
+        {(["users", "pages", "reset"] as const).map(t => (
           <button key={t} onClick={() => setActiveTab(t)}
-            style={{ padding: "0.5rem 1rem", border: "none", background: "none", cursor: "pointer", fontFamily: "'DM Sans', sans-serif", fontSize: "0.875rem", fontWeight: activeTab === t ? 600 : 400, color: activeTab === t ? "var(--navy)" : "var(--text-muted)", borderBottom: activeTab === t ? "2px solid var(--navy)" : "2px solid transparent", marginBottom: "-2px", textTransform: "capitalize" }}>
-            {t === "users" ? "Users & Roles" : "Pages"}
+            style={{ padding: "0.5rem 1rem", border: "none", background: "none", cursor: "pointer", fontFamily: "'DM Sans', sans-serif", fontSize: "0.875rem", fontWeight: activeTab === t ? 600 : 400, color: t === "reset" ? (activeTab === t ? "#b03030" : "rgba(176,48,48,0.6)") : activeTab === t ? "var(--navy)" : "var(--text-muted)", borderBottom: activeTab === t ? `2px solid ${t === "reset" ? "#b03030" : "var(--navy)"}` : "2px solid transparent", marginBottom: "-2px", textTransform: "capitalize" }}>
+            {t === "users" ? "Users & Roles" : t === "pages" ? "Pages" : "Factory Reset"}
           </button>
         ))}
       </div>
@@ -81,7 +91,7 @@ export default function AdminPage() {
                         {u.id === user?.id && <span style={{ fontSize: "0.68rem", background: "var(--gold-pale)", color: "var(--navy)", padding: "1px 6px", borderRadius: 4, fontWeight: 600 }}>You</span>}
                       </div>
                     </td>
-                    <td style={{ padding: "0.75rem 1rem", fontSize: "0.8rem", color: "var(--text-muted)" }}>{(u as { username?: string }).username ?? u.email}</td>
+                    <td style={{ padding: "0.75rem 1rem", fontSize: "0.8rem", color: "var(--text-muted)" }}>{u.username ?? u.email}</td>
                     <td style={{ padding: "0.75rem 1rem" }}><span className={`badge badge-${u.role}`}>{u.role}</span></td>
                     <td style={{ padding: "0.75rem 1rem", fontSize: "0.8rem", color: "var(--text-muted)" }}>{u.joinedAt}</td>
                     <td style={{ padding: "0.75rem 1rem" }}>
@@ -130,6 +140,42 @@ export default function AdminPage() {
             </table>
           </div>
         </div>
+      )}
+
+      {/* Factory Reset */}
+      {activeTab === "reset" && (
+        <div className="fade-in" style={{ maxWidth: 560 }}>
+          <div style={{ background: "white", border: "1.5px solid rgba(176,48,48,0.3)", borderRadius: 12, padding: "1.75rem 2rem" }}>
+            <h2 style={{ fontFamily: "'DM Serif Display', serif", fontSize: "1.4rem", color: "#b03030", marginBottom: "0.6rem" }}>Factory Reset</h2>
+            <p style={{ fontSize: "0.9rem", color: "var(--text-muted)", lineHeight: 1.6, marginBottom: "0.75rem" }}>
+              This will permanently delete <strong style={{ color: "var(--navy)" }}>everything</strong> — all wiki pages, edit suggestions, file requests, comments, roster members, and user accounts.
+            </p>
+            <p style={{ fontSize: "0.9rem", color: "var(--text-muted)", lineHeight: 1.6, marginBottom: "1.5rem" }}>
+              A single coach account will be recreated with username <strong style={{ color: "var(--navy)" }}>coach</strong> and password <strong style={{ color: "var(--navy)" }}>coach</strong>. You will be logged out immediately.
+            </p>
+            <button
+              onClick={() => setShowResetConfirm(true)}
+              disabled={resetting}
+              style={{ padding: "0.65rem 1.5rem", background: "#b03030", color: "white", border: "none", borderRadius: 8, fontFamily: "'DM Sans', sans-serif", fontSize: "0.95rem", fontWeight: 700, cursor: resetting ? "wait" : "pointer" }}
+            >
+              {resetting ? "Resetting…" : "Factory Reset"}
+            </button>
+          </div>
+        </div>
+      )}
+
+      {showResetConfirm && (
+        <ConfirmDialog
+          title="Factory Reset?"
+          message={
+            <>
+              This will <strong style={{ color: "#b03030" }}>permanently delete all data</strong> — pages, suggestions, requests, comments, and all accounts. The only remaining account will be <strong style={{ color: "var(--navy)" }}>coach / coach</strong>. This cannot be undone.
+            </>
+          }
+          confirmLabel="Reset Everything"
+          onConfirm={handleReset}
+          onCancel={() => setShowResetConfirm(false)}
+        />
       )}
 
     </div>
