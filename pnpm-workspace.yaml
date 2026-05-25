@@ -1,6 +1,7 @@
 allowBuilds:
   '@prisma/engines': true
   esbuild: true
+  libsql: true
   prisma: true
   sharp: true
   unrs-resolver: true
