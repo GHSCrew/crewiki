@@ -27,6 +27,8 @@ export default function WikiHome() {
   const [importing, setImporting] = useState(false);
   const [newTitle, setNewTitle] = useState("");
   const [showNewPage, setShowNewPage] = useState(false);
+  const [segments, setSegments] = useState<string[]>(["Root"]);
+  const [customTexts, setCustomTexts] = useState<string[]>([]);
   const fileRef = useRef<HTMLInputElement>(null);
   const dirRef = useRef<HTMLInputElement>(null);
 
@@ -70,18 +72,51 @@ export default function WikiHome() {
     }
   }
 
+  function updateSegment(idx: number, value: string) {
+    setSegments(prev => { const next = prev.slice(0, idx + 1); next[idx] = value; return next; });
+    setCustomTexts(prev => { const next = prev.slice(0, idx + 1); if (next[idx] === undefined) next[idx] = ""; return next; });
+  }
+  function updateCustomText(idx: number, text: string) {
+    setCustomTexts(prev => { const next = [...prev]; next[idx] = text; return next; });
+  }
+
+  const topLevelFolders = [...new Set(pages.map(p => p.folder.split("/")[0]).filter(Boolean))].sort();
+  function getSubfolders(prefix: string) {
+    return [...new Set(pages.filter(p => p.folder.startsWith(prefix + "/")).map(p => p.folder.slice(prefix.length + 1).split("/")[0]).filter(Boolean))].sort();
+  }
+
+  type FolderSlot = { idx: number; seg: string; text: string; subfolders: string[] };
+  const folderSlots: FolderSlot[] = [];
+  let _path = "";
+  for (let i = 0; i <= 10; i++) {
+    const seg = segments[i] ?? (i === 0 ? "Root" : "");
+    const text = customTexts[i] ?? "";
+    folderSlots.push({ idx: i, seg, text, subfolders: i === 0 ? topLevelFolders : getSubfolders(_path) });
+    const stop = (i === 0 && seg === "Root") || (i > 0 && seg === "") || (seg === "__custom__" && !text.trim());
+    if (stop) break;
+    const eff = seg === "__custom__" ? text.trim() : seg;
+    _path = _path ? `${_path}/${eff}` : eff;
+  }
+  const folderValue = _path;
+
+  function resetNewPage() {
+    setShowNewPage(false);
+    setNewTitle("");
+    setSegments(["Root"]);
+    setCustomTexts([]);
+  }
+
   async function handleCreatePage() {
     const title = newTitle.trim();
     if (!title) return;
     if (canEdit) {
-      await createPage(title, `# ${title}\n`, "", user!.id, user!.name, user!.role);
+      await createPage(title, `# ${title}\n`, folderValue, user!.id, user!.name, user!.role);
       toast(`"${title}" created`, "success");
     } else {
-      await addPageRequest({ type: "create", requesterId: user!.id, requesterName: user!.name, requesterRole: user!.role, newTitle: title, newContent: `# ${title}\n`, folder: "", message: `New page request: "${title}"` });
+      await addPageRequest({ type: "create", requesterId: user!.id, requesterName: user!.name, requesterRole: user!.role, newTitle: title, newContent: `# ${title}\n`, folder: folderValue, message: `New page request: "${title}"` });
       toast("Page request submitted", "info");
     }
-    setNewTitle("");
-    setShowNewPage(false);
+    resetNewPage();
   }
 
   const btnBase: React.CSSProperties = {
@@ -187,24 +222,65 @@ export default function WikiHome() {
 
           {/* Inline new-page form */}
           {showNewPage && (
-            <div style={{ background: "white", border: "1.5px solid var(--gold)", borderRadius: 10, padding: "1rem 1.25rem", marginBottom: "1.25rem", display: "flex", gap: "0.75rem", alignItems: "center", flexWrap: "wrap" }}>
-              <input
-                autoFocus
-                value={newTitle}
-                onChange={e => setNewTitle(e.target.value)}
-                onKeyDown={e => { if (e.key === "Enter") handleCreatePage(); if (e.key === "Escape") { setShowNewPage(false); setNewTitle(""); } }}
-                placeholder="Page title…"
-                style={{ flex: 1, minWidth: 200, padding: "0.5rem 0.85rem", border: "1px solid var(--border)", borderRadius: 6, fontSize: "0.9rem", fontFamily: "'DM Sans', sans-serif", outline: "none" }}
-              />
-              <span style={{ fontSize: "0.8rem", color: "var(--text-muted)" }}>will be added to root</span>
-              <button onClick={handleCreatePage} disabled={!newTitle.trim()}
-                style={{ ...btnBase, background: newTitle.trim() ? "var(--navy)" : "var(--border)", color: "var(--gold)", border: "none", opacity: 1, cursor: newTitle.trim() ? "pointer" : "not-allowed" }}>
-                {canEdit ? "Create" : "Request"}
-              </button>
-              <button onClick={() => { setShowNewPage(false); setNewTitle(""); }}
-                style={{ ...btnBase, background: "none", color: "var(--text-muted)", border: "1px solid var(--border)" }}>
-                Cancel
-              </button>
+            <div style={{ background: "white", border: "1.5px solid var(--gold)", borderRadius: 10, padding: "1rem 1.25rem", marginBottom: "1.25rem", display: "flex", flexDirection: "column", gap: "0.65rem" }}>
+              {/* Row 1: title + buttons */}
+              <div style={{ display: "flex", gap: "0.75rem", alignItems: "center", flexWrap: "wrap" }}>
+                <input
+                  autoFocus
+                  value={newTitle}
+                  onChange={e => setNewTitle(e.target.value)}
+                  onKeyDown={e => { if (e.key === "Enter") handleCreatePage(); if (e.key === "Escape") resetNewPage(); }}
+                  placeholder="Page title…"
+                  style={{ flex: 1, minWidth: 200, padding: "0.5rem 0.85rem", border: "1px solid var(--border)", borderRadius: 6, fontSize: "0.9rem", fontFamily: "'DM Sans', sans-serif", outline: "none" }}
+                />
+                <button onClick={handleCreatePage} disabled={!newTitle.trim()}
+                  style={{ ...btnBase, background: newTitle.trim() ? "var(--navy)" : "var(--border)", color: "var(--gold)", border: "none", opacity: 1, cursor: newTitle.trim() ? "pointer" : "not-allowed" }}>
+                  {canEdit ? "Create" : "Request"}
+                </button>
+                <button onClick={resetNewPage}
+                  style={{ ...btnBase, background: "none", color: "var(--text-muted)", border: "1px solid var(--border)" }}>
+                  Cancel
+                </button>
+              </div>
+              {/* Row 2: recursive folder path picker */}
+              <div style={{ display: "flex", alignItems: "center", gap: "0.4rem", flexWrap: "wrap", fontSize: "0.82rem" }}>
+                <span style={{ color: "var(--text-muted)", fontWeight: 600, fontSize: "0.75rem", textTransform: "uppercase", letterSpacing: "0.05em" }}>Folder:</span>
+                {folderSlots.map((slot, si) => (
+                  <span key={slot.idx} style={{ display: "contents" }}>
+                    {si > 0 && <span style={{ color: "var(--text-muted)", fontWeight: 600 }}>/</span>}
+                    <select
+                      value={slot.seg}
+                      onChange={e => updateSegment(slot.idx, e.target.value)}
+                      style={{ padding: "0.25rem 0.5rem", borderRadius: 6, border: "1px solid var(--border)", background: "var(--surface-raised)", fontSize: "0.82rem", fontFamily: "'DM Sans', sans-serif", color: "var(--navy)", cursor: "pointer", outline: "none" }}
+                    >
+                      {slot.idx === 0 ? (
+                        <>
+                          <option value="Root">Root</option>
+                          {slot.subfolders.map(f => <option key={f} value={f}>{f}</option>)}
+                          <option value="__custom__">+ Type your own…</option>
+                        </>
+                      ) : (
+                        <>
+                          <option value="">— none —</option>
+                          {slot.subfolders.map(f => <option key={f} value={f}>{f}</option>)}
+                          <option value="__custom__">+ Type your own…</option>
+                        </>
+                      )}
+                    </select>
+                    {slot.seg === "__custom__" && (
+                      <input
+                        value={slot.text}
+                        onChange={e => updateCustomText(slot.idx, e.target.value)}
+                        placeholder={slot.idx === 0 ? "Folder name…" : "Subfolder name…"}
+                        style={{ padding: "0.25rem 0.5rem", border: "1px solid var(--gold)", borderRadius: 6, fontSize: "0.82rem", fontFamily: "'DM Sans', sans-serif", outline: "none", width: 140 }}
+                      />
+                    )}
+                  </span>
+                ))}
+                <span style={{ color: "var(--text-muted)", fontSize: "0.75rem" }}>
+                  → will be added to {folderValue ? <strong style={{ color: "var(--navy)" }}>{folderValue}</strong> : "root"}
+                </span>
+              </div>
             </div>
           )}
 

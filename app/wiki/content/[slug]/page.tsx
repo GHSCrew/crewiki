@@ -383,7 +383,7 @@ export default function WikiPageView() {
   }
 
   return (
-    <div style={{ padding: "2rem 3rem" }}>
+    <div className="wiki-page-outer">
       {/* Breadcrumb */}
       <div style={{ fontSize: "0.8rem", color: "var(--text-muted)", marginBottom: "1rem" }}>
         <span style={{ cursor: "pointer", color: "var(--water)" }} onClick={() => router.push("/wiki")}>Wiki</span>

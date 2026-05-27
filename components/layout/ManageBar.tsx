@@ -32,7 +32,8 @@ export default function ManageBar() {
   const currentPage = slug ? pages.find(p => p.slug === slug) : undefined;
   const currentFolder = currentPage?.folder ?? "";
 
-  const [moveFolder, setMoveFolder] = useState("");
+  const [moveSegs, setMoveSegs] = useState<string[]>(["Root"]);
+  const [moveTexts, setMoveTexts] = useState<string[]>([]);
   const [renameTitle, setRenameTitle] = useState("");
   const [showRename, setShowRename] = useState(false);
   const [importing, setImporting] = useState(false);
@@ -40,7 +41,32 @@ export default function ManageBar() {
   const fileRef = useRef<HTMLInputElement>(null);
   const dirRef = useRef<HTMLInputElement>(null);
 
-  const allFolders = Array.from(new Set(pages.map(p => p.folder))).sort();
+  function updateMoveSeg(idx: number, value: string) {
+    setMoveSegs(prev => { const next = prev.slice(0, idx + 1); next[idx] = value; return next; });
+    setMoveTexts(prev => { const next = prev.slice(0, idx + 1); if (next[idx] === undefined) next[idx] = ""; return next; });
+  }
+  function updateMoveText(idx: number, text: string) {
+    setMoveTexts(prev => { const next = [...prev]; next[idx] = text; return next; });
+  }
+  function resetMove() { setMoveSegs(["Root"]); setMoveTexts([]); }
+
+  const topMoveFolders = [...new Set(pages.map(p => p.folder.split("/")[0]).filter(Boolean))].sort();
+  function getMoveSubfolders(prefix: string) {
+    return [...new Set(pages.filter(p => p.folder.startsWith(prefix + "/")).map(p => p.folder.slice(prefix.length + 1).split("/")[0]).filter(Boolean))].sort();
+  }
+  type MoveSlot = { idx: number; seg: string; text: string; subfolders: string[] };
+  const moveSlots: MoveSlot[] = [];
+  let _movePath = "";
+  for (let i = 0; i <= 10; i++) {
+    const seg = moveSegs[i] ?? (i === 0 ? "Root" : "");
+    const text = moveTexts[i] ?? "";
+    moveSlots.push({ idx: i, seg, text, subfolders: i === 0 ? topMoveFolders : getMoveSubfolders(_movePath) });
+    const stop = (i === 0 && seg === "Root") || (i > 0 && seg === "") || (seg === "__custom__" && !text.trim());
+    if (stop) break;
+    const eff = seg === "__custom__" ? text.trim() : seg;
+    _movePath = _movePath ? `${_movePath}/${eff}` : eff;
+  }
+  const moveFolder = _movePath;
 
   async function importFiles(files: FileList | null) {
     if (!files || files.length === 0) return;
@@ -103,10 +129,11 @@ export default function ManageBar() {
   }
 
   async function handleMove() {
-    if (!currentPage || !moveFolder || moveFolder === currentPage.folder) return;
+    if (!currentPage || moveFolder === currentPage.folder) return;
     if (canEdit) {
       await movePage(currentPage.slug, moveFolder);
-      toast(`Moved to "${moveFolder}"`, "success");
+      toast(`Moved to "${moveFolder || "root"}"`, "success");
+      resetMove();
     } else {
       await addPageRequest({
         type: "move",
@@ -117,10 +144,10 @@ export default function ManageBar() {
         pageTitle: currentPage.title,
         pageSlug: currentPage.slug,
         newFolder: moveFolder,
-        message: `Move request: "${currentPage.title}" → "${moveFolder}"`,
+        message: `Move request: "${currentPage.title}" → "${moveFolder || "root"}"`,
       });
       toast("Move request submitted", "info");
-      setMoveFolder("");
+      resetMove();
     }
   }
 
@@ -190,18 +217,41 @@ export default function ManageBar() {
           <div style={{ width: 1, height: 24, background: "var(--border)", margin: "0 0.25rem" }} />
 
           {/* Move */}
-          <div style={{ display: "flex", alignItems: "center", gap: "0.4rem" }}>
-            <select
-              value={moveFolder}
-              onChange={e => setMoveFolder(e.target.value)}
-              style={{ padding: "0.3rem 0.5rem", border: "1px solid var(--border)", borderRadius: 6, fontSize: "0.8rem", fontFamily: "'DM Sans', sans-serif", background: "white", color: "var(--text)", minWidth: 140 }}
-            >
-              <option value="">Move to folder…</option>
-              {allFolders.filter(f => f !== currentPage.folder).map(f => (
-                <option key={f} value={f}>{f}</option>
-              ))}
-            </select>
-            {moveFolder && moveFolder !== currentPage.folder && (
+          <div style={{ display: "flex", alignItems: "center", gap: "0.4rem", flexWrap: "wrap" }}>
+            <span style={{ fontSize: "0.75rem", color: "var(--text-muted)", fontWeight: 600 }}>Move to:</span>
+            {moveSlots.map((slot, si) => (
+              <span key={slot.idx} style={{ display: "contents" }}>
+                {si > 0 && <span style={{ color: "var(--text-muted)", fontWeight: 600 }}>/</span>}
+                <select
+                  value={slot.seg}
+                  onChange={e => updateMoveSeg(slot.idx, e.target.value)}
+                  style={{ padding: "0.3rem 0.5rem", border: "1px solid var(--border)", borderRadius: 6, fontSize: "0.8rem", fontFamily: "'DM Sans', sans-serif", background: "white", color: "var(--text)", cursor: "pointer", outline: "none" }}
+                >
+                  {slot.idx === 0 ? (
+                    <>
+                      <option value="Root">Root</option>
+                      {slot.subfolders.map(f => <option key={f} value={f}>{f}</option>)}
+                      <option value="__custom__">+ New folder…</option>
+                    </>
+                  ) : (
+                    <>
+                      <option value="">— here —</option>
+                      {slot.subfolders.map(f => <option key={f} value={f}>{f}</option>)}
+                      <option value="__custom__">+ New subfolder…</option>
+                    </>
+                  )}
+                </select>
+                {slot.seg === "__custom__" && (
+                  <input
+                    value={slot.text}
+                    onChange={e => updateMoveText(slot.idx, e.target.value)}
+                    placeholder={slot.idx === 0 ? "Folder name…" : "Subfolder name…"}
+                    style={{ padding: "0.3rem 0.5rem", border: "1px solid var(--gold)", borderRadius: 6, fontSize: "0.8rem", fontFamily: "'DM Sans', sans-serif", outline: "none", width: 130 }}
+                  />
+                )}
+              </span>
+            ))}
+            {moveFolder !== currentPage.folder && (
               <button onClick={handleMove} style={{ ...btnBase, background: "var(--water)", color: "white", border: "none" }}>
                 {canEdit ? "Move" : "Request move"}
               </button>
