@@ -82,6 +82,7 @@ function FolderTree({ node, name, depth, pathname, folderPath }: {
 
 const NAV_ITEMS = [
   { href: "/wiki", label: "Home", icon: "⊞" },
+  { href: "/wiki/activity", label: "Activity", icon: "📜" },
   { href: "/wiki/suggestions", label: "Suggestions", icon: "✏️" },
   { href: "/wiki/team", label: "Team", icon: "⛵" },
   { href: "/wiki/notifications", label: "Notifications", icon: "🔔" },

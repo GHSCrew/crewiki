@@ -47,6 +47,16 @@ export default function FolderPage() {
     .sort((a, b) => a.title.localeCompare(b.title));
   const folderPageCount = pages.filter(p => p.folder === name || p.folder.startsWith(`${name}/`)).length;
 
+  // Direct subfolders of this folder, with a recursive article count for each.
+  const subSegs = isRoot
+    ? [...new Set(pages.map(p => p.folder.split("/")[0]).filter(Boolean))]
+    : [...new Set(pages.filter(p => p.folder.startsWith(`${name}/`)).map(p => p.folder.slice(name.length + 1).split("/")[0]).filter(Boolean))];
+  const subfolders = subSegs.sort().map(seg => {
+    const path = isRoot ? seg : `${name}/${seg}`;
+    const count = pages.filter(p => p.folder === path || p.folder.startsWith(`${path}/`)).length;
+    return { seg, path, count };
+  });
+
   // Destination folders for a whole-folder move: every existing folder except
   // this one and its own subtree (can't move a folder inside itself).
   const destFolders = [...new Set(pages.map(p => p.folder).filter(Boolean))]
@@ -212,16 +222,21 @@ export default function FolderPage() {
         )}
         <p style={{ color: "var(--text-muted)", fontSize: "0.9rem" }}>
           {folderPages.length} article{folderPages.length !== 1 ? "s" : ""}
+          {subfolders.length > 0 && ` · ${subfolders.length} subfolder${subfolders.length !== 1 ? "s" : ""}`}
         </p>
       </div>
 
-      {folderPages.length === 0 ? (
-        <div style={{ padding: "3rem", textAlign: "center", color: "var(--text-muted)", background: "white", border: "1px solid var(--border)", borderRadius: 12 }}>
-          No articles in this folder yet.
-        </div>
-      ) : (
-        <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
-          {folderPages.map(page => (
+      <div style={{ display: "flex", gap: "2rem", alignItems: "flex-start" }}>
+        {/* Articles */}
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ fontSize: "0.72rem", textTransform: "uppercase", letterSpacing: "0.08em", fontWeight: 700, color: "var(--text-muted)", marginBottom: "0.75rem" }}>Articles</div>
+          {folderPages.length === 0 ? (
+            <div style={{ padding: "3rem", textAlign: "center", color: "var(--text-muted)", background: "white", border: "1px solid var(--border)", borderRadius: 12 }}>
+              No articles in this folder yet.
+            </div>
+          ) : (
+            <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
+              {folderPages.map(page => (
             <Link key={page.slug} href={`/wiki/content/${page.slug}`} style={{ textDecoration: "none" }}>
               <div
                 style={{ background: "white", border: "1px solid var(--border)", borderRadius: 12, padding: "1.25rem 1.5rem", cursor: "pointer", transition: "border-color 0.15s, box-shadow 0.15s" }}
@@ -248,9 +263,33 @@ export default function FolderPage() {
                 </div>
               </div>
             </Link>
-          ))}
+              ))}
+            </div>
+          )}
         </div>
-      )}
+
+        {/* Subfolders */}
+        {subfolders.length > 0 && (
+          <aside style={{ width: 260, flexShrink: 0 }}>
+            <div style={{ fontSize: "0.72rem", textTransform: "uppercase", letterSpacing: "0.08em", fontWeight: 700, color: "var(--text-muted)", marginBottom: "0.75rem" }}>Subfolders</div>
+            <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
+              {subfolders.map(sf => (
+                <Link key={sf.path} href={`/wiki/folder/${encodeURIComponent(sf.path)}`} style={{ textDecoration: "none" }}>
+                  <div
+                    style={{ background: "white", border: "1px solid var(--border)", borderRadius: 10, padding: "0.75rem 1rem", cursor: "pointer", display: "flex", alignItems: "center", gap: "0.6rem", transition: "border-color 0.15s, box-shadow 0.15s" }}
+                    onMouseEnter={e => { e.currentTarget.style.borderColor = "var(--gold)"; e.currentTarget.style.boxShadow = "0 2px 12px rgba(0,0,0,0.06)"; }}
+                    onMouseLeave={e => { e.currentTarget.style.borderColor = "var(--border)"; e.currentTarget.style.boxShadow = "none"; }}
+                  >
+                    <span style={{ fontSize: "1.1rem", flexShrink: 0 }}>📁</span>
+                    <span style={{ flex: 1, minWidth: 0, fontFamily: "'DM Sans', sans-serif", fontSize: "0.875rem", fontWeight: 600, color: "var(--navy)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{sf.seg}</span>
+                    <span style={{ fontSize: "0.7rem", background: "var(--surface-raised)", color: "var(--text-muted)", padding: "1px 8px", borderRadius: 99, fontWeight: 600, flexShrink: 0 }}>{sf.count}</span>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          </aside>
+        )}
+      </div>
     </div>
   );
 }
