@@ -128,6 +128,43 @@ model PageRequest {
   reviewNote    String?
 }
 
+model DiscussionPost {
+  id         String  @id @default(cuid())
+  type       String  // "stub" | "error" | "redundancy" | "reference"
+  title      String
+  body       String  @default("")
+  authorId   String
+  authorName String
+  authorRole String
+  createdAt  String  // full ISO timestamp (to the minute)
+  resolved   Boolean @default(false)
+  resolvedBy String?
+  resolvedAt String?
+
+  tags      DiscussionTag[]
+  assignees DiscussionAssignee[]
+}
+
+model DiscussionTag {
+  id     String @id @default(cuid())
+  postId String
+  kind   String // "page" | "folder"
+  ref    String // page slug or folder path
+  label  String // page title or folder name
+
+  post DiscussionPost @relation(fields: [postId], references: [id], onDelete: Cascade)
+}
+
+model DiscussionAssignee {
+  id       String @id @default(cuid())
+  postId   String
+  userId   String
+  userName String
+  userRole String
+
+  post DiscussionPost @relation(fields: [postId], references: [id], onDelete: Cascade)
+}
+
 model TeamMember {
   id           String  @id @default(cuid())
   userId       String? @unique

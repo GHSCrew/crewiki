@@ -8,6 +8,7 @@ export async function POST() {
     prisma.lineComment.deleteMany(),
     prisma.pageVersion.deleteMany(),
     prisma.pageRequest.deleteMany(),
+    prisma.discussionPost.deleteMany(),
     prisma.teamMember.deleteMany(),
     prisma.wikiPage.deleteMany(),
     prisma.user.deleteMany(),

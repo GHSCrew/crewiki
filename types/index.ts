@@ -118,6 +118,40 @@ export interface PageRequest {
   reviewNote?: string;
 }
 
+export type DiscussionType = "stub" | "error" | "redundancy" | "reference";
+
+export interface DiscussionTag {
+  id: string;
+  postId: string;
+  kind: "page" | "folder";
+  ref: string;   // page slug or folder path
+  label: string; // page title or folder name
+}
+
+export interface DiscussionAssignee {
+  id: string;
+  postId: string;
+  userId: string;
+  userName: string;
+  userRole: Role;
+}
+
+export interface DiscussionPost {
+  id: string;
+  type: DiscussionType;
+  title: string;
+  body: string;
+  authorId: string;
+  authorName: string;
+  authorRole: Role;
+  createdAt: string; // full ISO timestamp
+  resolved: boolean;
+  resolvedBy?: string;
+  resolvedAt?: string;
+  tags: DiscussionTag[];
+  assignees: DiscussionAssignee[];
+}
+
 export type Permission = "view" | "suggest" | "edit";
 
 export const ROLE_PERMISSIONS: Record<Role, Permission> = {

@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import type { WikiPage, EditSuggestion, LineComment, Notification, PageVersion, PageRequest, ViewMode } from "@/types";
+import type { WikiPage, EditSuggestion, LineComment, Notification, PageVersion, PageRequest, ViewMode, DiscussionPost, DiscussionType, DiscussionAssignee } from "@/types";
 
 interface WikiStore {
   pages: WikiPage[];
@@ -8,6 +8,7 @@ interface WikiStore {
   notifications: Notification[];
   versions: PageVersion[];
   pageRequests: PageRequest[];
+  discussions: DiscussionPost[];
   hydrated: boolean;
   viewMode: ViewMode;
 
@@ -33,6 +34,15 @@ interface WikiStore {
   getVersions: (pageId: string) => PageVersion[];
   getPageComments: (pageId: string) => LineComment[];
   getOpenSuggestions: () => EditSuggestion[];
+  fetchDiscussions: () => Promise<void>;
+  createDiscussion: (input: {
+    type: DiscussionType; title: string; body: string;
+    authorId: string; authorName: string; authorRole: string;
+    tags: { kind: "page" | "folder"; ref: string; label: string }[];
+  }) => Promise<void>;
+  setDiscussionResolved: (id: string, resolved: boolean, resolvedBy: string) => Promise<void>;
+  setDiscussionAssignees: (id: string, assignees: Omit<DiscussionAssignee, "id" | "postId">[]) => Promise<void>;
+  deleteDiscussion: (id: string) => Promise<void>;
 }
 
 export const useWikiStore = create<WikiStore>((set, get) => ({
@@ -42,6 +52,7 @@ export const useWikiStore = create<WikiStore>((set, get) => ({
   notifications: [],
   versions: [],
   pageRequests: [],
+  discussions: [],
   hydrated: false,
   viewMode: "read",
 
@@ -214,4 +225,44 @@ export const useWikiStore = create<WikiStore>((set, get) => ({
   getVersions: (pageId) => get().versions.filter(v => v.pageId === pageId).sort((a, b) => b.version - a.version),
   getPageComments: (pageId) => get().comments.filter(c => c.pageId === pageId),
   getOpenSuggestions: () => get().suggestions.filter(s => s.status === "open"),
+
+  fetchDiscussions: async () => {
+    const discussions: DiscussionPost[] = await fetch("/api/discussions").then(r => r.json());
+    set({ discussions });
+  },
+
+  createDiscussion: async (input) => {
+    const res = await fetch("/api/discussions", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(input),
+    });
+    const created: DiscussionPost = await res.json();
+    set(state => ({ discussions: [created, ...state.discussions] }));
+  },
+
+  setDiscussionResolved: async (id, resolved, resolvedBy) => {
+    const res = await fetch(`/api/discussions/${id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: resolved ? "resolve" : "reopen", resolvedBy }),
+    });
+    const updated: DiscussionPost = await res.json();
+    set(state => ({ discussions: state.discussions.map(d => d.id === id ? updated : d) }));
+  },
+
+  setDiscussionAssignees: async (id, assignees) => {
+    const res = await fetch(`/api/discussions/${id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "setAssignees", assignees }),
+    });
+    const updated: DiscussionPost = await res.json();
+    set(state => ({ discussions: state.discussions.map(d => d.id === id ? updated : d) }));
+  },
+
+  deleteDiscussion: async (id) => {
+    await fetch(`/api/discussions/${id}`, { method: "DELETE" });
+    set(state => ({ discussions: state.discussions.filter(d => d.id !== id) }));
+  },
 }));
