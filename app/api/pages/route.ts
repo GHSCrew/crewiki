@@ -44,11 +44,12 @@ export async function POST(request: Request) {
   }
 
   const now = new Date().toISOString().split("T")[0];
+  const nowIso = new Date().toISOString();
   const page = await prisma.wikiPage.create({
     data: { slug, title, content, folder, authorId, authorName, createdAt: now, updatedAt: now, version: 1 },
   });
   await prisma.pageVersion.create({
-    data: { pageId: page.id, content, authorId, authorName, authorRole: authorRole ?? "coach", message: "Initial import", createdAt: now, version: 1 },
+    data: { pageId: page.id, content, authorId, authorName, authorRole: authorRole ?? "coach", message: "Initial import", createdAt: nowIso, version: 1 },
   });
   return Response.json(page, { status: 201 });
 }

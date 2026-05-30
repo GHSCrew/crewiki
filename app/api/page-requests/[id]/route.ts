@@ -15,6 +15,7 @@ export async function PATCH(
   if (!req) return Response.json({ error: "Not found" }, { status: 404 });
 
   const now = new Date().toISOString().split("T")[0];
+  const nowIso = new Date().toISOString();
   let pages = null;
 
   if (status === "approved") {
@@ -46,7 +47,7 @@ export async function PATCH(
           authorName: req.requesterName,
           authorRole: req.requesterRole,
           message: "Created via approved request",
-          createdAt: now,
+          createdAt: nowIso,
           version: 1,
         },
       });

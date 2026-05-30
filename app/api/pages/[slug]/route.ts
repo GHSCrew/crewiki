@@ -25,6 +25,7 @@ export async function PUT(
 
   const newVersion = page.version + 1;
   const updatedAt = new Date().toISOString().split("T")[0];
+  const createdAtIso = new Date().toISOString();
 
   const [updated] = await prisma.$transaction([
     prisma.wikiPage.update({
@@ -39,7 +40,7 @@ export async function PUT(
         authorName,
         authorRole,
         message,
-        createdAt: updatedAt,
+        createdAt: createdAtIso,
         version: newVersion,
       },
     }),

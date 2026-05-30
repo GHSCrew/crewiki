@@ -3,7 +3,7 @@ import { AuthProvider } from "@/lib/auth-context";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "CrewWiki — Team Knowledge Base",
+  title: "Glastonbury CrewWiki",
   description: "The interactive rowing team wiki.",
 };
 

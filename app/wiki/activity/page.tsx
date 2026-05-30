@@ -26,6 +26,14 @@ function prettyDate(iso: string): string {
   }
 }
 
+function prettyTime(iso: string): string {
+  try {
+    return format(parseISO(iso), "h:mm a");
+  } catch {
+    return iso;
+  }
+}
+
 export default function ActivityPage() {
   const [items, setItems] = useState<ActivityItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -37,12 +45,14 @@ export default function ActivityPage() {
       .finally(() => setLoading(false));
   }, []);
 
-  // Group consecutive (already-sorted) items by their date.
+  // Group consecutive (already-sorted) items by calendar day; entries within a
+  // day stay ordered to the minute by the API.
   const groups: { date: string; items: ActivityItem[] }[] = [];
   for (const it of items) {
+    const day = it.createdAt.slice(0, 10);
     const last = groups[groups.length - 1];
-    if (last && last.date === it.createdAt) last.items.push(it);
-    else groups.push({ date: it.createdAt, items: [it] });
+    if (last && last.date === day) last.items.push(it);
+    else groups.push({ date: day, items: [it] });
   }
 
   return (
@@ -90,7 +100,7 @@ export default function ActivityPage() {
                       <p style={{ fontSize: "0.85rem", color: "var(--text)", fontFamily: "'DM Sans', sans-serif" }}>{it.message}</p>
                       <div style={{ marginTop: "0.4rem", display: "flex", gap: "0.75rem", fontSize: "0.72rem", color: "var(--text-muted)" }}>
                         {it.folder && <span>📁 {it.folder}</span>}
-                        <span>{it.createdAt}</span>
+                        <span>🕑 {prettyTime(it.createdAt)}</span>
                       </div>
                     </div>
                   </Link>
