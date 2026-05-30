@@ -4,6 +4,7 @@ import { usePathname } from "next/navigation";
 import { useAuth } from "@/lib/auth-context";
 import { useWikiStore } from "@/lib/store";
 import { toast } from "@/lib/toast";
+import { downloadPageMarkdown } from "@/lib/download";
 import ConfirmDialog from "@/components/ConfirmDialog";
 
 function readFileAsText(file: File): Promise<string> {
@@ -257,6 +258,14 @@ export default function ManageBar() {
               </button>
             )}
           </div>
+
+          {/* Download page */}
+          <button
+            onClick={() => downloadPageMarkdown(currentPage)}
+            style={{ ...btnBase, background: "none", color: "var(--navy)", border: "1px solid var(--border)" }}
+          >
+            ↓ Download page
+          </button>
 
           {/* Rename article */}
           {canEdit && !showRename && (

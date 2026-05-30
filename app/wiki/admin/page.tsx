@@ -3,6 +3,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth-context";
 import ConfirmDialog from "@/components/ConfirmDialog";
+import { downloadWiki } from "@/lib/download";
 import type { User, WikiPage, Role } from "@/types";
 
 const ROLE_ORDER: Role[] = ["coach", "captain", "athlete"];
@@ -155,6 +156,21 @@ export default function AdminPage() {
       {/* Factory Reset */}
       {activeTab === "reset" && (
         <div className="fade-in" style={{ maxWidth: 560, display: "flex", flexDirection: "column", gap: "1.25rem" }}>
+
+          {/* Backup / Download */}
+          <div style={{ background: "white", border: "1.5px solid rgba(45,90,130,0.3)", borderRadius: 12, padding: "1.75rem 2rem" }}>
+            <h2 style={{ fontFamily: "'DM Serif Display', serif", fontSize: "1.4rem", color: "var(--navy)", marginBottom: "0.6rem" }}>Back Up First</h2>
+            <p style={{ fontSize: "0.9rem", color: "var(--text-muted)", lineHeight: 1.6, marginBottom: "1.5rem" }}>
+              Before resetting anything, download a complete backup of the wiki. Every page is exported as a markdown file inside a zip archive, with its folder structure preserved.
+            </p>
+            <button
+              onClick={() => downloadWiki(pages)}
+              disabled={pages.length === 0}
+              style={{ padding: "0.65rem 1.5rem", background: "var(--navy)", color: "var(--gold)", border: "none", borderRadius: 8, fontFamily: "'DM Sans', sans-serif", fontSize: "0.95rem", fontWeight: 700, cursor: pages.length === 0 ? "not-allowed" : "pointer", opacity: pages.length === 0 ? 0.6 : 1 }}
+            >
+              ↓ Download Entire Wiki
+            </button>
+          </div>
 
           {/* Content Reset */}
           <div style={{ background: "white", border: "1.5px solid rgba(176,120,48,0.35)", borderRadius: 12, padding: "1.75rem 2rem" }}>

@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useAuth } from "@/lib/auth-context";
 import { useWikiStore } from "@/lib/store";
 import { toast } from "@/lib/toast";
+import { downloadWiki } from "@/lib/download";
 
 function readFileAsText(file: File): Promise<string> {
   return new Promise((res, rej) => {
@@ -215,6 +216,10 @@ export default function WikiHome() {
               <button disabled={importing} onClick={() => dirRef.current?.click()}
                 style={{ ...btnBase, background: "white", color: "var(--navy)", border: "1.5px solid var(--border)" }}>
                 Import folder
+              </button>
+              <button disabled={pages.length === 0} onClick={() => downloadWiki(pages)}
+                style={{ ...btnBase, background: "white", color: "var(--navy)", border: "1.5px solid var(--border)", opacity: pages.length === 0 ? 0.6 : 1, cursor: pages.length === 0 ? "not-allowed" : "pointer" }}>
+                ↓ Download wiki
               </button>
               {importing && <span style={{ fontSize: "0.78rem", color: "var(--text-muted)" }}>Importing…</span>}
             </div>
