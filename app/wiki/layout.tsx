@@ -16,15 +16,21 @@ export default function WikiLayout({ children }: { children: React.ReactNode }) 
   const viewMode = useWikiStore(s => s.viewMode);
   const setViewMode = useWikiStore(s => s.setViewMode);
   const isContentPage = pathname.split("/")[2] === "content";
+  // Public shared pages live under /wiki/shared/* but must bypass auth + chrome
+  // so anyone (logged in or not, including crawlers) can view them.
+  const isSharedPage = pathname.startsWith("/wiki/shared/");
 
   useEffect(() => {
+    if (isSharedPage) return;
     if (!loading && !user) router.replace("/login");
     if (!loading && user) hydrate(user.id);
-  }, [user, loading, router, hydrate]);
+  }, [user, loading, router, hydrate, isSharedPage]);
 
   useEffect(() => {
     if (!isContentPage) setViewMode("read");
   }, [isContentPage, setViewMode]);
+
+  if (isSharedPage) return <>{children}</>;
 
   if (loading || !user) return (
     <div style={{ minHeight: "100vh", background: "var(--navy)", display: "flex", alignItems: "center", justifyContent: "center" }}>

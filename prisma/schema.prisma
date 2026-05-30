@@ -36,6 +36,18 @@ model WikiPage {
   versions    PageVersion[]
   comments    LineComment[]
   suggestions EditSuggestion[]
+  shareLinks  ShareLink[]
+}
+
+model ShareLink {
+  id        String @id @default(cuid())
+  token     String @unique
+  pageId    String
+  pageSlug  String
+  createdAt String
+  expiresAt String
+
+  page WikiPage @relation(fields: [pageId], references: [id], onDelete: Cascade)
 }
 
 model PageVersion {

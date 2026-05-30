@@ -8,12 +8,35 @@ import type { User, WikiPage, Role } from "@/types";
 
 const ROLE_ORDER: Role[] = ["coach", "captain", "athlete"];
 
+interface ShareInfo {
+  token: string;
+  pageSlug: string;
+  pageTitle: string;
+  folder: string;
+  createdAt: string;
+  expiresAt: string;
+}
+
+function timeLeft(expiresAt: string, now: number): string {
+  const ms = new Date(expiresAt).getTime() - now;
+  if (ms <= 0) return "expired";
+  const days = Math.floor(ms / 86400000);
+  const hours = Math.floor((ms % 86400000) / 3600000);
+  const mins = Math.floor((ms % 3600000) / 60000);
+  if (days > 0) return `${days}d ${hours}h`;
+  if (hours > 0) return `${hours}h ${mins}m`;
+  return `${mins}m`;
+}
+
 export default function AdminPage() {
   const { user, canEdit, logout } = useAuth();
   const router = useRouter();
   const [users, setUsers] = useState<User[]>([]);
   const [pages, setPages] = useState<WikiPage[]>([]);
-  const [activeTab, setActiveTab] = useState<"users" | "pages" | "reset">("users");
+  const [shares, setShares] = useState<ShareInfo[]>([]);
+  const [now, setNow] = useState(0);
+  const [copiedToken, setCopiedToken] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState<"users" | "pages" | "shared" | "reset">("users");
   const [showResetConfirm, setShowResetConfirm] = useState(false);
   const [showContentResetConfirm, setShowContentResetConfirm] = useState(false);
   const [resetting, setResetting] = useState(false);
@@ -22,7 +45,26 @@ export default function AdminPage() {
   useEffect(() => {
     fetch("/api/users").then(r => r.json()).then(setUsers);
     fetch("/api/pages").then(r => r.json()).then(setPages);
+    fetch("/api/share").then(r => r.json()).then(setShares).catch(() => {});
   }, []);
+
+  // Tick "now" so time-left counts down without calling Date.now() during render.
+  useEffect(() => {
+    const t = setTimeout(() => setNow(Date.now()), 0);
+    const id = setInterval(() => setNow(Date.now()), 60000);
+    return () => { clearTimeout(t); clearInterval(id); };
+  }, []);
+
+  async function removeShare(token: string) {
+    setShares(prev => prev.filter(s => s.token !== token));
+    await fetch(`/api/share/${token}`, { method: "DELETE" });
+  }
+
+  async function copyShare(token: string) {
+    try { await navigator.clipboard?.writeText(`${window.location.origin}/wiki/shared/${token}`); } catch {}
+    setCopiedToken(token);
+    setTimeout(() => setCopiedToken(c => (c === token ? null : c)), 1800);
+  }
 
   if (!canEdit) {
     return (
@@ -67,10 +109,10 @@ export default function AdminPage() {
 
       {/* Tabs */}
       <div style={{ display: "flex", gap: "0.25rem", borderBottom: "2px solid var(--border)", marginBottom: "1.5rem" }}>
-        {(["users", "pages", ...(user?.role === "coach" ? ["reset"] : [])] as const).map(t => (
+        {(["users", "pages", "shared", ...(user?.role === "coach" ? ["reset"] : [])] as const).map(t => (
           <button key={t} onClick={() => setActiveTab(t as typeof activeTab)}
             style={{ padding: "0.5rem 1rem", border: "none", background: "none", cursor: "pointer", fontFamily: "'DM Sans', sans-serif", fontSize: "0.875rem", fontWeight: activeTab === t ? 600 : 400, color: t === "reset" ? (activeTab === t ? "#b03030" : "rgba(176,48,48,0.6)") : activeTab === t ? "var(--navy)" : "var(--text-muted)", borderBottom: activeTab === t ? `2px solid ${t === "reset" ? "#b03030" : "var(--navy)"}` : "2px solid transparent", marginBottom: "-2px", textTransform: "capitalize" }}>
-            {t === "users" ? "Users & Roles" : t === "pages" ? "Pages" : "Factory Reset"}
+            {t === "users" ? "Users & Roles" : t === "pages" ? "Pages" : t === "shared" ? "Shared" : "Factory Reset"}
           </button>
         ))}
       </div>
@@ -150,6 +192,59 @@ export default function AdminPage() {
               </tbody>
             </table>
           </div>
+        </div>
+      )}
+
+      {/* Shared links */}
+      {activeTab === "shared" && (
+        <div className="fade-in">
+          <p style={{ fontSize: "0.82rem", color: "var(--text-muted)", marginBottom: "1rem" }}>
+            Temporary public links that let anyone read a page without signing in. Links expire automatically and disappear from this list once they do.
+          </p>
+          {shares.length === 0 ? (
+            <div style={{ padding: "3rem", textAlign: "center", color: "var(--text-muted)", background: "white", border: "1px solid var(--border)", borderRadius: 12 }}>
+              No active shared links.
+            </div>
+          ) : (
+            <div style={{ background: "white", border: "1px solid var(--border)", borderRadius: 12, overflow: "hidden" }}>
+              <table style={{ width: "100%", borderCollapse: "collapse" }}>
+                <thead>
+                  <tr style={{ background: "var(--navy)" }}>
+                    {["Page", "Folder", "Time left", "Shared", "Actions"].map(h => (
+                      <th key={h} style={{ padding: "0.75rem 1rem", textAlign: "left", fontSize: "0.72rem", textTransform: "uppercase", letterSpacing: "0.06em", color: "var(--gold-light)", fontFamily: "'DM Sans', sans-serif", fontWeight: 600 }}>{h}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {shares.map((s, i) => {
+                    const left = timeLeft(s.expiresAt, now);
+                    const soon = new Date(s.expiresAt).getTime() - now < 86400000;
+                    return (
+                      <tr key={s.token} style={{ borderBottom: "1px solid var(--border)", background: i % 2 === 0 ? "white" : "var(--cream)" }}>
+                        <td style={{ padding: "0.75rem 1rem", fontWeight: 600, fontSize: "0.875rem" }}>{s.pageTitle}</td>
+                        <td style={{ padding: "0.75rem 1rem" }}><span style={{ fontSize: "0.72rem", background: "var(--navy)", color: "var(--gold-light)", padding: "2px 7px", borderRadius: 4 }}>{s.folder || "Root"}</span></td>
+                        <td style={{ padding: "0.75rem 1rem", fontSize: "0.8rem", color: soon ? "#b03030" : "var(--text-muted)", fontWeight: soon ? 600 : 400 }}>{left}</td>
+                        <td style={{ padding: "0.75rem 1rem", fontSize: "0.8rem", color: "var(--text-muted)" }}>{s.createdAt.slice(0, 10)}</td>
+                        <td style={{ padding: "0.75rem 1rem" }}>
+                          <div style={{ display: "flex", gap: "0.75rem", alignItems: "center" }}>
+                            <button
+                              onClick={() => copyShare(s.token)}
+                              style={{ fontSize: "0.78rem", color: copiedToken === s.token ? "var(--water)" : "var(--navy)", background: "none", border: "none", cursor: "pointer", fontFamily: "'DM Sans', sans-serif", fontWeight: 600, padding: 0 }}
+                            >{copiedToken === s.token ? "Copied ✓" : "Copy"}</button>
+                            <a href={`/wiki/shared/${s.token}`} target="_blank" rel="noopener noreferrer" style={{ fontSize: "0.78rem", color: "var(--water)", textDecoration: "none", fontWeight: 600 }}>Visit ↗</a>
+                            <button
+                              onClick={() => removeShare(s.token)}
+                              style={{ fontSize: "0.78rem", color: "#b03030", background: "none", border: "none", cursor: "pointer", fontFamily: "'DM Sans', sans-serif", fontWeight: 600, padding: 0 }}
+                            >Remove</button>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
         </div>
       )}
 
