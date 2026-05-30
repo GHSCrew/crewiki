@@ -5,6 +5,7 @@ import { diffLines } from "diff";
 import { toast } from "@/lib/toast";
 import { useAuth } from "@/lib/auth-context";
 import { useWikiStore } from "@/lib/store";
+import WikiGraph from "@/components/WikiGraph";
 import type { EditSuggestion, PageVersion } from "@/types";
 
 // ─── Blame ────────────────────────────────────────────────────────────────────
@@ -293,7 +294,7 @@ export default function WikiPageView() {
   const params = useParams();
   const slug = params.slug as string;
   const { user, canEdit } = useAuth();
-  const { getPage, getVersions, getPageComments, addComment, resolveComment, updatePage, addSuggestion, suggestions, viewMode, setViewMode, fetchVersions } = useWikiStore();
+  const { getPage, getVersions, getPageComments, addComment, resolveComment, updatePage, addSuggestion, suggestions, viewMode, setViewMode, fetchVersions, pages } = useWikiStore();
   const router = useRouter();
 
   const page = getPage(slug);
@@ -602,6 +603,19 @@ export default function WikiPageView() {
             </div>
           ))}
         </div>
+      )}
+
+      {/* ── GRAPH ── */}
+      {viewMode === "graph" && (
+        <WikiGraph
+          pages={pages}
+          currentSlug={page.slug}
+          onNavigate={(slug) => {
+            if (slug === page.slug) { setViewMode("read"); return; }
+            setViewMode("read");
+            router.push(`/wiki/content/${slug}`);
+          }}
+        />
       )}
 
       {/* ── EDIT (coaches / captains) ── */}

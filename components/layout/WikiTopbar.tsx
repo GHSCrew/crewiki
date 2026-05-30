@@ -9,6 +9,7 @@ const MODE_LABELS: Record<ViewMode, string> = {
   comments: "Comments",
   blame: "Blame",
   history: "History",
+  graph: "Graph",
   edit: "Edit",
   suggest: "Edit",
   manage: "Manage",
@@ -21,7 +22,7 @@ export default function WikiTopbar() {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
-  const modes: ViewMode[] = ["read", "comments", "blame", "history", canEdit ? "edit" : "suggest", "manage"];
+  const modes: ViewMode[] = ["read", "comments", "blame", "history", "graph", canEdit ? "edit" : "suggest", "manage"];
 
   useEffect(() => {
     function onMouseDown(e: MouseEvent) {

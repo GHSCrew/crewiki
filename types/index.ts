@@ -94,7 +94,7 @@ export interface TeamMember {
   registeredAt: string;
 }
 
-export type ViewMode = "read" | "comments" | "edit" | "suggest" | "blame" | "history" | "manage";
+export type ViewMode = "read" | "comments" | "edit" | "suggest" | "blame" | "history" | "manage" | "graph";
 
 export interface PageRequest {
   id: string;
