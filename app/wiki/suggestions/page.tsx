@@ -20,7 +20,7 @@ export default function SuggestionsPage() {
 
   async function handleAction(id: string, action: "approved" | "rejected" | "merged") {
     const s = suggestions.find(sg => sg.id === id)!;
-    await updateSuggestionStatus(id, action, user!.name, reviewNote[id] || "");
+    await updateSuggestionStatus(id, action, user!.name, reviewNote[id] || "", user!.id);
     if (action === "merged") {
       await updatePage(s.pageSlug, s.suggestedContent, user!.id, user!.name, user!.role, `Merged suggestion: ${s.message}`);
     }

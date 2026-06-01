@@ -21,7 +21,7 @@ interface WikiStore {
   renamePage: (slug: string, newTitle: string) => Promise<WikiPage>;
   renameFolder: (oldName: string, newName: string) => Promise<void>;
   addSuggestion: (s: Omit<EditSuggestion, "id" | "createdAt">) => Promise<void>;
-  updateSuggestionStatus: (id: string, status: EditSuggestion["status"], reviewedBy: string, note: string) => Promise<void>;
+  updateSuggestionStatus: (id: string, status: EditSuggestion["status"], reviewedBy: string, note: string, reviewerId?: string) => Promise<void>;
   addComment: (c: Omit<LineComment, "id" | "createdAt">) => Promise<void>;
   resolveComment: (id: string) => Promise<void>;
   markNotificationRead: (id: string) => Promise<void>;
@@ -142,11 +142,11 @@ export const useWikiStore = create<WikiStore>((set, get) => ({
     set(state => ({ suggestions: [...state.suggestions, created] }));
   },
 
-  updateSuggestionStatus: async (id, status, reviewedBy, note) => {
+  updateSuggestionStatus: async (id, status, reviewedBy, note, reviewerId) => {
     const res = await fetch(`/api/suggestions/${id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ status, reviewedBy, reviewNote: note }),
+      body: JSON.stringify({ status, reviewedBy, reviewNote: note, reviewerId }),
     });
     const updated: EditSuggestion = await res.json();
     set(state => ({ suggestions: state.suggestions.map(s => s.id !== id ? s : updated) }));

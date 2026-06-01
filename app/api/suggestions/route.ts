@@ -1,4 +1,5 @@
 import prisma from "@/lib/prisma";
+import { pageContributorIds } from "@/lib/notify";
 import type { Role } from "@/types";
 
 function mapSuggestion(s: {
@@ -35,21 +36,28 @@ export async function POST(request: Request) {
 
   const createdAt = new Date().toISOString().split("T")[0];
 
+  // Notify the page's contributors (creator + prior editors) — except the
+  // person making the suggestion — so a reviewer knows there's something to act on.
+  const recipients = await pageContributorIds(body.pageId, body.authorId);
+
   const [suggestion] = await prisma.$transaction([
     prisma.editSuggestion.create({
       data: { ...body, status: "open", createdAt },
     }),
-    prisma.notification.create({
-      data: {
-        userId: "u1",
-        type: "suggestion_opened",
-        title: `New suggestion on ${body.pageTitle}`,
-        body: `${body.authorName} suggested an edit.`,
-        relatedType: "suggestion",
-        read: false,
-        createdAt,
-      },
-    }),
+    ...recipients.map(userId =>
+      prisma.notification.create({
+        data: {
+          userId,
+          type: "suggestion_opened",
+          title: `New suggestion on ${body.pageTitle}`,
+          body: `${body.authorName} suggested an edit to "${body.pageTitle}".`,
+          relatedId: body.pageSlug,
+          relatedType: "suggestion",
+          read: false,
+          createdAt,
+        },
+      })
+    ),
   ]);
 
   return Response.json(mapSuggestion(suggestion), { status: 201 });

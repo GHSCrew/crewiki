@@ -1,5 +1,6 @@
 import prisma from "@/lib/prisma";
 import { propagatePageTitle } from "@/lib/denormalize";
+import { pageContributorIds } from "@/lib/notify";
 import type { Role } from "@/types";
 
 export async function GET(
@@ -28,20 +29,9 @@ export async function PUT(
   const updatedAt = new Date().toISOString().split("T")[0];
   const createdAtIso = new Date().toISOString();
 
-  // Notify everyone who has contributed to this page (its creator + anyone who
-  // authored a previous version) — except whoever is making this edit.
-  const priorAuthors = await prisma.pageVersion.findMany({
-    where: { pageId: page.id },
-    select: { authorId: true },
-  });
-  const contributorIds = new Set<string>([page.authorId, ...priorAuthors.map(v => v.authorId)]);
-  contributorIds.delete(authorId);
-  const recipients = contributorIds.size
-    ? await prisma.user.findMany({
-        where: { id: { in: [...contributorIds] }, status: "active" },
-        select: { id: true },
-      })
-    : [];
+  // Notify everyone who has contributed to this page — except whoever is making
+  // this edit.
+  const recipients = await pageContributorIds(page.id, authorId);
 
   const [updated] = await prisma.$transaction([
     prisma.wikiPage.update({
@@ -60,10 +50,10 @@ export async function PUT(
         version: newVersion,
       },
     }),
-    ...recipients.map(r =>
+    ...recipients.map(userId =>
       prisma.notification.create({
         data: {
-          userId: r.id,
+          userId,
           type: "page_updated",
           title: `Page updated: ${page.title}`,
           body: `${authorName} edited "${page.title}".`,

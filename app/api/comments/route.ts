@@ -1,4 +1,5 @@
 import prisma from "@/lib/prisma";
+import { pageContributorIds } from "@/lib/notify";
 import type { Role } from "@/types";
 
 function mapComment(c: {
@@ -25,9 +26,28 @@ export async function POST(request: Request) {
     authorId: string; authorName: string; authorRole: Role; body: string;
   };
 
+  const createdAt = new Date().toISOString().split("T")[0];
   const comment = await prisma.lineComment.create({
-    data: { ...body, resolved: false, createdAt: new Date().toISOString().split("T")[0] },
+    data: { ...body, resolved: false, createdAt },
   });
+
+  // Notify the page's contributors (creator + prior editors) — except the commenter.
+  const page = await prisma.wikiPage.findUnique({ where: { id: body.pageId }, select: { title: true, slug: true } });
+  const recipients = await pageContributorIds(body.pageId, body.authorId);
+  if (page && recipients.length) {
+    await prisma.notification.createMany({
+      data: recipients.map(userId => ({
+        userId,
+        type: "comment_added",
+        title: `New comment on ${page.title}`,
+        body: `${body.authorName} commented on "${page.title}".`,
+        relatedId: page.slug,
+        relatedType: "comment",
+        read: false,
+        createdAt,
+      })),
+    });
+  }
 
   return Response.json(mapComment(comment), { status: 201 });
 }
