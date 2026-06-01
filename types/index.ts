@@ -75,11 +75,12 @@ export interface Notification {
     | "suggestion_rejected"
     | "suggestion_merged"
     | "comment_added"
-    | "page_updated";
+    | "page_updated"
+    | "issue_assigned";
   title: string;
   body: string;
   relatedId?: string;
-  relatedType?: "page" | "suggestion" | "comment";
+  relatedType?: "page" | "suggestion" | "comment" | "discussion";
   read: boolean;
   createdAt: string;
 }

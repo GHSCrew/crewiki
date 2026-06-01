@@ -1,6 +1,12 @@
 import { compare, hash } from "bcryptjs";
 import prisma from "@/lib/prisma";
+import { propagateUserName, propagateUserRole } from "@/lib/denormalize";
 import type { Role } from "@/types";
+
+/** Normalize a username the same way signup does, so login lookups always match. */
+function normalizeUsername(raw: string): string {
+  return raw.toLowerCase().replace(/[^a-z0-9_]/g, "");
+}
 
 export async function PATCH(
   request: Request,
@@ -27,17 +33,25 @@ export async function PATCH(
   }
 
   if (body.name !== undefined || body.username !== undefined) {
+    let username: string | null | undefined;
     if (body.username !== undefined) {
-      const taken = await prisma.user.findFirst({ where: { username: body.username, NOT: { id } } });
-      if (taken) return Response.json({ error: "Username already taken." }, { status: 409 });
+      username = body.username.trim() ? normalizeUsername(body.username) : null;
+      if (username) {
+        const taken = await prisma.user.findFirst({ where: { username, NOT: { id } } });
+        if (taken) return Response.json({ error: "Username already taken." }, { status: 409 });
+      }
     }
     const updated = await prisma.user.update({
       where: { id },
       data: {
         ...(body.name !== undefined && { name: body.name }),
-        ...(body.username !== undefined && { username: body.username || null }),
+        ...(username !== undefined && { username }),
       },
     });
+    // Keep denormalized name copies on the user's live content in sync.
+    if (body.name !== undefined) {
+      await prisma.$transaction(propagateUserName(id, updated.name));
+    }
     return Response.json({
       id: updated.id, name: updated.name,
       username: updated.username ?? undefined,
@@ -46,6 +60,8 @@ export async function PATCH(
   }
 
   const updated = await prisma.user.update({ where: { id }, data: { role: body.role } });
+  // Keep live role copies (currently: discussion assignees) in sync.
+  await prisma.$transaction(propagateUserRole(id, updated.role as Role));
   return Response.json({
     id: updated.id, name: updated.name,
     username: updated.username ?? undefined,

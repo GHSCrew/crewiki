@@ -1,4 +1,5 @@
 import prisma from "@/lib/prisma";
+import { propagatePageTitle } from "@/lib/denormalize";
 import type { Role } from "@/types";
 
 export async function GET(
@@ -27,6 +28,21 @@ export async function PUT(
   const updatedAt = new Date().toISOString().split("T")[0];
   const createdAtIso = new Date().toISOString();
 
+  // Notify everyone who has contributed to this page (its creator + anyone who
+  // authored a previous version) — except whoever is making this edit.
+  const priorAuthors = await prisma.pageVersion.findMany({
+    where: { pageId: page.id },
+    select: { authorId: true },
+  });
+  const contributorIds = new Set<string>([page.authorId, ...priorAuthors.map(v => v.authorId)]);
+  contributorIds.delete(authorId);
+  const recipients = contributorIds.size
+    ? await prisma.user.findMany({
+        where: { id: { in: [...contributorIds] }, status: "active" },
+        select: { id: true },
+      })
+    : [];
+
   const [updated] = await prisma.$transaction([
     prisma.wikiPage.update({
       where: { slug },
@@ -44,6 +60,20 @@ export async function PUT(
         version: newVersion,
       },
     }),
+    ...recipients.map(r =>
+      prisma.notification.create({
+        data: {
+          userId: r.id,
+          type: "page_updated",
+          title: `Page updated: ${page.title}`,
+          body: `${authorName} edited "${page.title}".`,
+          relatedId: page.slug,
+          relatedType: "page",
+          read: false,
+          createdAt: updatedAt,
+        },
+      })
+    ),
   ]);
 
   return Response.json(updated);
@@ -67,6 +97,10 @@ export async function PATCH(
       updatedAt: new Date().toISOString().split("T")[0],
     },
   });
+  // Keep the title shown on open suggestions and page requests in sync.
+  if (body.title !== undefined) {
+    await prisma.$transaction(propagatePageTitle(page.id, updated.title));
+  }
   return Response.json(updated);
 }
 
@@ -77,6 +111,13 @@ export async function DELETE(
   const { slug } = await params;
   const page = await prisma.wikiPage.findUnique({ where: { slug } });
   if (!page) return Response.json({ error: "Not found" }, { status: 404 });
-  await prisma.wikiPage.delete({ where: { slug } });
+  // Comments, suggestions, versions, and share links cascade via FK. PageRequest
+  // and DiscussionTag reference pages by loose string (no relation), so clean up
+  // those dangling references explicitly.
+  await prisma.$transaction([
+    prisma.pageRequest.deleteMany({ where: { pageId: page.id } }),
+    prisma.discussionTag.deleteMany({ where: { kind: "page", ref: slug } }),
+    prisma.wikiPage.delete({ where: { slug } }),
+  ]);
   return new Response(null, { status: 204 });
 }

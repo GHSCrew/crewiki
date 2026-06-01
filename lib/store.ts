@@ -41,7 +41,7 @@ interface WikiStore {
     tags: { kind: "page" | "folder"; ref: string; label: string }[];
   }) => Promise<void>;
   setDiscussionResolved: (id: string, resolved: boolean, resolvedBy: string) => Promise<void>;
-  setDiscussionAssignees: (id: string, assignees: Omit<DiscussionAssignee, "id" | "postId">[]) => Promise<void>;
+  setDiscussionAssignees: (id: string, assignees: Omit<DiscussionAssignee, "id" | "postId">[], actor?: { id: string; name: string }) => Promise<void>;
   deleteDiscussion: (id: string) => Promise<void>;
 }
 
@@ -251,11 +251,11 @@ export const useWikiStore = create<WikiStore>((set, get) => ({
     set(state => ({ discussions: state.discussions.map(d => d.id === id ? updated : d) }));
   },
 
-  setDiscussionAssignees: async (id, assignees) => {
+  setDiscussionAssignees: async (id, assignees, actor) => {
     const res = await fetch(`/api/discussions/${id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ action: "setAssignees", assignees }),
+      body: JSON.stringify({ action: "setAssignees", assignees, actorId: actor?.id, actorName: actor?.name }),
     });
     const updated: DiscussionPost = await res.json();
     set(state => ({ discussions: state.discussions.map(d => d.id === id ? updated : d) }));

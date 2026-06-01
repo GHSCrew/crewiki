@@ -10,7 +10,7 @@ export async function GET(request: Request) {
   return Response.json(notifications.map(n => ({
     ...n,
     relatedId: n.relatedId ?? undefined,
-    relatedType: n.relatedType as "page" | "suggestion" | "comment" | undefined ?? undefined,
+    relatedType: n.relatedType as "page" | "suggestion" | "comment" | "discussion" | undefined ?? undefined,
   })));
 }
 

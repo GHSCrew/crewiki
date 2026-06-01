@@ -10,6 +10,7 @@ const TYPE_ICONS: Record<string, string> = {
   comment_added: "💬",
   page_updated: "📄",
   assignment_posted: "📋",
+  issue_assigned: "📋",
 };
 
 export default function NotificationsPage() {

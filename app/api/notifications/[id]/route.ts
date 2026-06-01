@@ -12,6 +12,6 @@ export async function PATCH(
   return Response.json({
     ...updated,
     relatedId: updated.relatedId ?? undefined,
-    relatedType: updated.relatedType as "page" | "suggestion" | "comment" | undefined ?? undefined,
+    relatedType: updated.relatedType as "page" | "suggestion" | "comment" | "discussion" | undefined ?? undefined,
   });
 }

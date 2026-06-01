@@ -101,7 +101,11 @@ export default function IssuesPage() {
     const next = isAssigned(post, u.id)
       ? post.assignees.filter(a => a.userId !== u.id)
       : [...post.assignees, { id: "", postId: post.id, userId: u.id, userName: u.name, userRole: u.role }];
-    await setDiscussionAssignees(post.id, next.map(a => ({ userId: a.userId, userName: a.userName, userRole: a.userRole })));
+    await setDiscussionAssignees(
+      post.id,
+      next.map(a => ({ userId: a.userId, userName: a.userName, userRole: a.userRole })),
+      user ? { id: user.id, name: user.name } : undefined,
+    );
   }
 
   const inputStyle: React.CSSProperties = { padding: "0.55rem 0.85rem", border: "1px solid var(--border)", borderRadius: 8, fontSize: "0.9rem", fontFamily: "'DM Sans', sans-serif", outline: "none", width: "100%" };
