@@ -10,11 +10,9 @@ export async function PATCH(
   const body = await request.json() as { role?: Role; activate?: boolean; currentPassword?: string; newPassword?: string; name?: string; username?: string };
 
   if (body.activate) {
-    const user = await prisma.user.update({ where: { id }, data: { status: "active" } });
-    const now = new Date().toISOString().split("T")[0];
-    await prisma.teamMember.create({
-      data: { userId: user.id, name: user.name, role: user.role, username: user.username ?? undefined, registeredAt: now },
-    });
+    // Approving a pending signup just flips the account to active, which adds
+    // them to the roster (the roster is the set of active users).
+    await prisma.user.update({ where: { id }, data: { status: "active" } });
     return Response.json({ ok: true });
   }
 
@@ -35,13 +33,6 @@ export async function PATCH(
     }
     const updated = await prisma.user.update({
       where: { id },
-      data: {
-        ...(body.name !== undefined && { name: body.name }),
-        ...(body.username !== undefined && { username: body.username || null }),
-      },
-    });
-    await prisma.teamMember.updateMany({
-      where: { userId: id },
       data: {
         ...(body.name !== undefined && { name: body.name }),
         ...(body.username !== undefined && { username: body.username || null }),

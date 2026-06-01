@@ -21,6 +21,10 @@ export async function POST(request: Request) {
     return Response.json({ error: "Your account is pending approval by a coach or captain." }, { status: 403 });
   }
 
+  if (user.status !== "active") {
+    return Response.json({ error: "This account is no longer active. Contact a coach or captain." }, { status: 403 });
+  }
+
   const valid = await compare(password, user.passwordHash);
   if (!valid) {
     return Response.json({ error: "Incorrect password." }, { status: 401 });

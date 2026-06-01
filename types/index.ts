@@ -85,13 +85,13 @@ export interface Notification {
 }
 
 
+// A roster member is an active user account. `id` is the user's id.
 export interface TeamMember {
   id: string;
-  userId?: string;
   name: string;
   role: Role;
   username?: string;
-  registeredAt: string;
+  joinedAt: string;
 }
 
 export type ViewMode = "read" | "comments" | "edit" | "suggest" | "blame" | "history" | "manage" | "graph";

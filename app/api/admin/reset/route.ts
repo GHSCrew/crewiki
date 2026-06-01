@@ -9,7 +9,6 @@ export async function POST() {
     prisma.pageVersion.deleteMany(),
     prisma.pageRequest.deleteMany(),
     prisma.discussionPost.deleteMany(),
-    prisma.teamMember.deleteMany(),
     prisma.wikiPage.deleteMany(),
     prisma.user.deleteMany(),
   ]);
@@ -17,7 +16,7 @@ export async function POST() {
   const passwordHash = await hash("coach", 12);
   const today = new Date().toISOString().split("T")[0];
 
-  const coach = await prisma.user.create({
+  await prisma.user.create({
     data: {
       name: "Coach",
       username: "coach",
@@ -25,16 +24,6 @@ export async function POST() {
       role: "coach",
       status: "active",
       joinedAt: today,
-    },
-  });
-
-  await prisma.teamMember.create({
-    data: {
-      userId: coach.id,
-      name: coach.name,
-      role: "coach",
-      username: "coach",
-      registeredAt: today,
     },
   });
 

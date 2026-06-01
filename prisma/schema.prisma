@@ -19,7 +19,6 @@ model User {
   suggestions   EditSuggestion[]
   notifications Notification[]
   versions      PageVersion[]
-  teamMember    TeamMember?
 }
 
 model WikiPage {
@@ -175,15 +174,4 @@ model DiscussionAssignee {
   userRole String
 
   post DiscussionPost @relation(fields: [postId], references: [id], onDelete: Cascade)
-}
-
-model TeamMember {
-  id           String  @id @default(cuid())
-  userId       String? @unique
-  name         String
-  role         String
-  username     String?
-  registeredAt String
-
-  user User? @relation(fields: [userId], references: [id])
 }

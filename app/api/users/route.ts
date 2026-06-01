@@ -5,9 +5,7 @@ export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const pending = searchParams.get("pending") === "true";
   const users = await prisma.user.findMany({
-    where: pending
-      ? { status: "pending" }
-      : { status: { not: "pending" }, teamMember: { isNot: null } },
+    where: pending ? { status: "pending" } : { status: "active" },
     orderBy: { joinedAt: "asc" },
   });
   return Response.json(users.map(u => ({
