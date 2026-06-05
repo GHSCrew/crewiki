@@ -56,7 +56,7 @@ export default function ActivityPage() {
   }
 
   return (
-    <div style={{ padding: "2.5rem 3rem", maxWidth: 820 }}>
+    <div style={{ padding: "var(--page-pad)", maxWidth: 820 }}>
       {/* Header */}
       <div style={{ marginBottom: "2rem" }}>
         <h1 style={{ fontFamily: "'DM Serif Display', serif", fontSize: "2rem", color: "var(--navy)", marginBottom: "0.25rem" }}>Activity</h1>

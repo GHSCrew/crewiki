@@ -38,7 +38,7 @@ export default function SuggestionsPage() {
   const typeColor = (t: string) => t === "create" ? "var(--water)" : t === "delete" ? "#b03030" : "var(--gold)";
 
   return (
-    <div style={{ padding: "2.5rem 3rem", maxWidth: 900 }}>
+    <div style={{ padding: "var(--page-pad)", maxWidth: 900 }}>
       <div style={{ marginBottom: "1.5rem" }}>
         <h1 style={{ fontFamily: "'DM Serif Display', serif", fontSize: "2rem", color: "var(--navy)", marginBottom: "0.3rem" }}>Suggestions & Requests</h1>
         <p style={{ color: "var(--text-muted)" }}>
@@ -154,7 +154,7 @@ export default function SuggestionsPage() {
           </div>
 
           {/* Diff view */}
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.5rem", marginBottom: "0.75rem" }}>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: "0.5rem", marginBottom: "0.75rem" }}>
             <div>
               <div style={{ fontSize: "0.68rem", textTransform: "uppercase", letterSpacing: "0.06em", color: "#c0392b", fontWeight: 600, marginBottom: "0.4rem" }}>Original</div>
               <pre style={{ background: "#fde8e8", padding: "0.6rem 0.75rem", borderRadius: 6, fontSize: "0.72rem", fontFamily: "'DM Mono', monospace", whiteSpace: "pre-wrap", maxHeight: 180, overflow: "auto" }}>{s.originalContent.slice(0, 400)}{s.originalContent.length > 400 ? "…" : ""}</pre>

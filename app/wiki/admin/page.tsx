@@ -101,7 +101,7 @@ export default function AdminPage() {
   }
 
   return (
-    <div style={{ padding: "2.5rem 3rem", maxWidth: 1000 }}>
+    <div style={{ padding: "var(--page-pad)", maxWidth: 1000 }}>
       <div style={{ marginBottom: "2rem" }}>
         <h1 style={{ fontFamily: "'DM Serif Display', serif", fontSize: "2rem", color: "var(--navy)", marginBottom: "0.25rem" }}>Admin Panel</h1>
         <p style={{ color: "var(--text-muted)", fontSize: "0.9rem" }}>Manage team members and wiki pages.</p>

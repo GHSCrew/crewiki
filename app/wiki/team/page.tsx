@@ -76,7 +76,7 @@ export default function TeamPage() {
   }
 
   return (
-    <div style={{ padding: "2.5rem 3rem", maxWidth: 900 }}>
+    <div style={{ padding: "var(--page-pad)", maxWidth: 900 }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginBottom: "1.75rem" }}>
         <div>
           <h1 style={{ fontFamily: "'DM Serif Display', serif", fontSize: "2rem", color: "var(--navy)", marginBottom: "0.25rem" }}>Team Roster</h1>
@@ -129,7 +129,7 @@ export default function TeamPage() {
       {showForm && canEdit && (
         <form onSubmit={handleRegister} className="fade-in" style={{ background: "white", border: "1.5px solid var(--gold)", borderRadius: 12, padding: "1.5rem", marginBottom: "1.5rem" }}>
           <h2 style={{ fontFamily: "'DM Serif Display', serif", fontSize: "1.2rem", color: "var(--navy)", marginBottom: "1rem" }}>Register Team Member</h2>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "0.75rem", marginBottom: "1rem" }}>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))", gap: "0.75rem", marginBottom: "1rem" }}>
             <div>
               <label style={{ fontSize: "0.72rem", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.05em", display: "block", marginBottom: "0.3rem" }}>Full Name *</label>
               <input required type="text" value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))}

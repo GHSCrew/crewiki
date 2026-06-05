@@ -19,7 +19,7 @@ export default function NotificationsPage() {
   const userNotifs = notifications.filter(n => n.userId === user?.id).sort((a, b) => b.createdAt.localeCompare(a.createdAt));
 
   return (
-    <div style={{ padding: "2.5rem 3rem", maxWidth: 700 }}>
+    <div style={{ padding: "var(--page-pad)", maxWidth: 700 }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginBottom: "1.75rem" }}>
         <div>
           <h1 style={{ fontFamily: "'DM Serif Display', serif", fontSize: "2rem", color: "var(--navy)", marginBottom: "0.25rem" }}>Notifications</h1>

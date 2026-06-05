@@ -5,8 +5,7 @@
       "name": "crewwiki",
       "runtimeExecutable": "pnpm",
       "runtimeArgs": ["dev"],
-      "port": 3000,
-      "autoPort": false
+      "port": 3000
     }
   ]
 }

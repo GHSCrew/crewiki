@@ -33,7 +33,7 @@ export default function WikiTopbar() {
   }, []);
 
   return (
-    <div style={{
+    <div className="wiki-topbar" style={{
       height: 44,
       borderBottom: "1px solid var(--border)",
       display: "flex",

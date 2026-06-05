@@ -127,7 +127,7 @@ export default function WikiHome() {
   };
 
   return (
-    <div style={{ padding: "2.5rem 3rem", maxWidth: 1100 }}>
+    <div style={{ padding: "var(--page-pad)", maxWidth: 1100 }}>
       {/* Header */}
       <div style={{ marginBottom: "2.5rem" }}>
         <h1 style={{ fontFamily: "'DM Serif Display', serif", fontSize: "2.5rem", color: "var(--navy)", marginBottom: "0.35rem" }}>

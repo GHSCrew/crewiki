@@ -1,10 +1,19 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { AuthProvider } from "@/lib/auth-context";
 import "./globals.css";
 
 export const metadata: Metadata = {
   title: "Glastonbury CrewWiki",
   description: "The interactive rowing team wiki.",
+};
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  // Extend under notches/rounded corners so the full-screen mobile nav can use
+  // env(safe-area-inset-*) for correct padding in both orientations.
+  viewportFit: "cover",
+  themeColor: "#0a1628",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

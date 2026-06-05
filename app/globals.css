@@ -17,6 +17,12 @@
   --border: #d4c9a8;
   --surface: #ffffff;
   --surface-raised: #f5f2ea;
+  /* Standard padding for top-level page wrappers; tightened on mobile below. */
+  --page-pad: 2.5rem 3rem;
+}
+
+@media (max-width: 768px) {
+  :root { --page-pad: 1.4rem 1.05rem; }
 }
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -108,6 +114,78 @@ code, pre, .mono {
 /* Wiki content page outer wrapper */
 .wiki-page-outer { padding: 2rem 3rem; }
 
+/* ─── Mobile navigation (trinket + full-screen takeover) ─────────────────── */
+/* Hidden on desktop; the desktop <Sidebar> is shown instead. */
+.mobile-nav-trigger { display: none; }
+.mobile-nav-screen { display: none; }
+
+@media (max-width: 900px) {
+  /* Desktop sidebar disappears entirely on small screens. */
+  .sidebar-desktop { display: none !important; }
+
+  /* The trinket: a small fixed pill in the top-left corner. */
+  .mobile-nav-trigger {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: fixed;
+    top: 7px;
+    left: 9px;
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+    background: var(--navy);
+    border: 1px solid rgba(255,255,255,0.14);
+    color: var(--gold);
+    cursor: pointer;
+    z-index: 250;
+    box-shadow: 0 2px 8px rgba(10,22,40,0.28);
+    -webkit-tap-highlight-color: transparent;
+  }
+  .mobile-nav-trigger:active { transform: scale(0.94); }
+
+  /* The full-screen takeover that mirrors the sidebar. */
+  .mobile-nav-screen {
+    display: flex;
+    flex-direction: column;
+    position: fixed;
+    inset: 0;
+    background: var(--navy);
+    color: white;
+    z-index: 300;
+    /* Respect notches / rounded corners in both orientations. */
+    padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+  }
+
+  /* Pages without a topbar need room so their content clears the trinket. */
+  .wiki-main--no-topbar { padding-top: 50px; }
+
+  /* The content page's own topbar shifts right so the trinket can sit at left. */
+  .wiki-topbar { padding-left: 52px !important; }
+}
+
+/* ─── Sidebar / nav rows ─────────────────────────────────────────────────── */
+/* Gives folder + article links a clear clickable affordance: the whole row
+   lights up on hover/press instead of looking like bare text. Inline styles
+   only set a background when a row is *active*, so these :hover rules win for
+   every inactive row. */
+.nav-row {
+  border-radius: 7px;
+  transition: background 0.12s ease, color 0.12s ease;
+  -webkit-tap-highlight-color: transparent;
+}
+.nav-row:hover { background: rgba(255,255,255,0.07); color: #fff; }
+.nav-row:active { background: rgba(255,255,255,0.12); }
+/* Article links sit on a tinted hover so they read as distinct tap targets. */
+.nav-row--page:hover { background: rgba(201,168,76,0.14); color: var(--gold-light); }
+
+@media (max-width: 900px) {
+  /* Roomier touch targets on phones. Folders flex (icon + label); article
+     links stay block so their text can still ellipsis-truncate. */
+  .nav-row--folder { min-height: 44px; }
+  .nav-row--page { padding-top: 0.55rem !important; padding-bottom: 0.55rem !important; }
+}
+
 /* Responsive */
 @media (max-width: 1000px) {
   .toc { display: none; }
@@ -116,6 +194,11 @@ code, pre, .mono {
 @media (max-width: 768px) {
   .wiki-page-outer { padding: 1.25rem 1rem; }
 }
+
+/* Wide markdown elements scroll instead of blowing out the viewport. */
+.wiki-content table { display: block; overflow-x: auto; white-space: nowrap; }
+.wiki-content pre { max-width: 100%; }
+.wiki-content img { max-width: 100%; height: auto; }
 
 /* Line highlighting */
 .line-row { display: flex; }

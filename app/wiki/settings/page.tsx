@@ -81,7 +81,7 @@ export default function SettingsPage() {
   function blurBorder(e: React.FocusEvent<HTMLInputElement>) { e.target.style.borderColor = "var(--border)"; }
 
   return (
-    <div style={{ padding: "2.5rem 3rem", maxWidth: 520 }}>
+    <div style={{ padding: "var(--page-pad)", maxWidth: 520 }}>
       <h1 style={{ fontFamily: "'DM Serif Display', serif", fontSize: "2rem", color: "var(--navy)", marginBottom: "0.25rem" }}>Settings</h1>
       <p style={{ color: "var(--text-muted)", fontSize: "0.9rem", marginBottom: "2rem" }}>Manage your account.</p>
 

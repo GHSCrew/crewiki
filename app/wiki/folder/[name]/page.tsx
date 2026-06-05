@@ -110,7 +110,7 @@ export default function FolderPage() {
   }
 
   return (
-    <div style={{ padding: "2.5rem 3rem", maxWidth: 900 }}>
+    <div style={{ padding: "var(--page-pad)", maxWidth: 900 }}>
       {/* Breadcrumb */}
       <div style={{ fontSize: "0.8rem", color: "var(--text-muted)", marginBottom: "1.5rem" }}>
         <span style={{ cursor: "pointer", color: "var(--water)" }} onClick={() => router.push("/wiki")}>Wiki</span>

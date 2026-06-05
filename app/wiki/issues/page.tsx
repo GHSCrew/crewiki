@@ -111,7 +111,7 @@ export default function IssuesPage() {
   const inputStyle: React.CSSProperties = { padding: "0.55rem 0.85rem", border: "1px solid var(--border)", borderRadius: 8, fontSize: "0.9rem", fontFamily: "'DM Sans', sans-serif", outline: "none", width: "100%" };
 
   return (
-    <div style={{ padding: "2.5rem 3rem", maxWidth: 860 }}>
+    <div style={{ padding: "var(--page-pad)", maxWidth: 860 }}>
       {/* Header */}
       <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: "1rem", marginBottom: "1.5rem", flexWrap: "wrap" }}>
         <div>

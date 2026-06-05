@@ -4,6 +4,7 @@ import { useRouter, usePathname } from "next/navigation";
 import { useAuth } from "@/lib/auth-context";
 import { useWikiStore } from "@/lib/store";
 import Sidebar from "@/components/layout/Sidebar";
+import MobileNav from "@/components/layout/MobileNav";
 import WikiTopbar from "@/components/layout/WikiTopbar";
 import ManageBar from "@/components/layout/ManageBar";
 import ToastContainer from "@/components/Toast";
@@ -41,10 +42,11 @@ export default function WikiLayout({ children }: { children: React.ReactNode }) 
   return (
     <div style={{ display: "flex", minHeight: "100vh" }}>
       <Sidebar />
-      <div style={{ flex: 1, display: "flex", flexDirection: "column", minWidth: 0 }}>
+      <MobileNav />
+      <div className="wiki-main-col" style={{ flex: 1, display: "flex", flexDirection: "column", minWidth: 0 }}>
         {isContentPage && <WikiTopbar />}
         {isContentPage && viewMode === "manage" && <ManageBar />}
-        <main style={{ flex: 1, overflowX: "hidden" }}>
+        <main className={isContentPage ? "wiki-main" : "wiki-main wiki-main--no-topbar"} style={{ flex: 1, overflowX: "hidden" }}>
           {children}
         </main>
       </div>
