@@ -402,9 +402,9 @@ export default function WikiPageView() {
       {viewMode === "edit" && canEdit && (
         <div className="fade-in">
           <p style={{ fontSize: "0.82rem", color: "var(--text-muted)", marginBottom: "1rem" }}>You have editor access. Changes are saved with a commit message.</p>
-          <div style={{ display: "flex", gap: "0.75rem", marginBottom: "1rem", alignItems: "center" }}>
+          <div style={{ display: "flex", gap: "0.75rem", marginBottom: "1rem", alignItems: "center", flexWrap: "wrap" }}>
             <input value={editMessage} onChange={(e) => setEditMessage(e.target.value)} placeholder="Commit message (e.g. 'Updated catch section from practice notes')"
-              style={{ flex: 1, padding: "0.65rem 1rem", border: "1.5px solid var(--border)", borderRadius: 8, fontSize: "0.875rem", fontFamily: "'DM Sans', sans-serif", outline: "none" }}
+              style={{ flex: 1, minWidth: 200, padding: "0.65rem 1rem", border: "1.5px solid var(--border)", borderRadius: 8, fontSize: "0.875rem", fontFamily: "'DM Sans', sans-serif", outline: "none" }}
               onFocus={(e) => (e.target.style.borderColor = "var(--water)")}
               onBlur={(e) => (e.target.style.borderColor = "var(--border)")} />
             <button onClick={handleSave} disabled={!editMessage.trim()}
@@ -412,7 +412,7 @@ export default function WikiPageView() {
               {saved ? "Saved ✓" : "Save Changes"}
             </button>
           </div>
-          <textarea value={editContent} onChange={(e) => setEditContent(e.target.value)} rows={24}
+          <textarea value={editContent} onChange={(e) => setEditContent(e.target.value)} rows={24} className="md-editor"
             style={{ width: "100%", fontFamily: "'DM Mono', monospace", fontSize: "0.85rem", padding: "1rem", border: "1.5px solid var(--border)", borderRadius: 8, outline: "none", resize: "vertical", lineHeight: "1.6", background: "var(--navy)", color: "#c8d8e8" }}
             onFocus={(e) => (e.target.style.borderColor = "var(--gold)")}
             onBlur={(e) => (e.target.style.borderColor = "var(--border)")}
@@ -426,15 +426,15 @@ export default function WikiPageView() {
           <div style={{ background: "var(--gold-pale)", border: "1px solid var(--gold)", borderRadius: 8, padding: "0.75rem 1rem", marginBottom: "1rem", fontSize: "0.82rem" }}>
             <strong>Suggesting an edit:</strong> Your suggestion will be reviewed by a coach or captain before being merged.
           </div>
-          <div style={{ display: "flex", gap: "0.75rem", marginBottom: "1rem", alignItems: "center" }}>
+          <div style={{ display: "flex", gap: "0.75rem", marginBottom: "1rem", alignItems: "center", flexWrap: "wrap" }}>
             <input value={suggestMessage} onChange={(e) => setSuggestMessage(e.target.value)} placeholder="Describe your change and why you're suggesting it"
-              style={{ flex: 1, padding: "0.65rem 1rem", border: "1.5px solid var(--border)", borderRadius: 8, fontSize: "0.875rem", fontFamily: "'DM Sans', sans-serif", outline: "none" }} />
+              style={{ flex: 1, minWidth: 200, padding: "0.65rem 1rem", border: "1.5px solid var(--border)", borderRadius: 8, fontSize: "0.875rem", fontFamily: "'DM Sans', sans-serif", outline: "none" }} />
             <button onClick={handleSuggest} disabled={!suggestMessage.trim()}
               style={{ padding: "0.65rem 1.5rem", background: !suggestMessage.trim() ? "var(--border)" : "var(--water)", color: "white", border: "none", borderRadius: 8, fontWeight: 600, cursor: suggestMessage.trim() ? "pointer" : "not-allowed", fontFamily: "'DM Sans', sans-serif", whiteSpace: "nowrap" }}>
               Submit Suggestion
             </button>
           </div>
-          <textarea value={suggestContent} onChange={(e) => setSuggestContent(e.target.value)} rows={24}
+          <textarea value={suggestContent} onChange={(e) => setSuggestContent(e.target.value)} rows={24} className="md-editor"
             style={{ width: "100%", fontFamily: "'DM Mono', monospace", fontSize: "0.85rem", padding: "1rem", border: "1.5px solid var(--border)", borderRadius: 8, outline: "none", resize: "vertical", lineHeight: "1.6", background: "var(--navy)", color: "#c8d8e8" }} />
         </div>
       )}

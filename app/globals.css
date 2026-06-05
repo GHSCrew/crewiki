@@ -184,6 +184,15 @@ code, pre, .mono {
      links stay block so their text can still ellipsis-truncate. */
   .nav-row--folder { min-height: 44px; }
   .nav-row--page { padding-top: 0.55rem !important; padding-bottom: 0.55rem !important; }
+
+  /* Stop iOS Safari from auto-zooming when a field is focused. The browser
+     only zooms when the focused control's font-size is < 16px, so we pin every
+     form control to 16px on small screens (overrides the smaller inline sizes
+     used in the editor, comment box, manage bar, search, etc.). */
+  input, textarea, select { font-size: 16px !important; }
+
+  /* Give the markdown editor real room to breathe on a phone. */
+  .md-editor { min-height: 60vh; line-height: 1.7 !important; }
 }
 
 /* Responsive */
@@ -204,7 +213,13 @@ code, pre, .mono {
 .line-row { display: flex; }
 .line-number { min-width: 2.5rem; color: var(--text-muted); font-family: 'DM Mono', monospace; font-size: 0.8rem; padding: 0.15rem 0.5rem 0.15rem 0; text-align: right; user-select: none; cursor: pointer; }
 .line-number:hover { color: var(--water); }
-.line-content { flex: 1; padding: 0.15rem 0.5rem; border-radius: 3px; white-space: pre-wrap; font-family: 'DM Mono', monospace; font-size: 0.875rem; cursor: pointer; }
+.line-content { flex: 1; min-width: 0; padding: 0.15rem 0.5rem; border-radius: 3px; white-space: pre-wrap; overflow-wrap: anywhere; font-family: 'DM Mono', monospace; font-size: 0.875rem; cursor: pointer; }
+
+@media (max-width: 768px) {
+  /* Fatter tap target for the line numbers you click to comment on. */
+  .line-number { min-width: 2.1rem; padding-top: 0.3rem; padding-bottom: 0.3rem; }
+  .line-content { padding-top: 0.3rem; padding-bottom: 0.3rem; }
+}
 .line-content:hover { background: var(--gold-pale); }
 .line-content.has-comment { background: rgba(201,168,76,0.12); }
 .line-content.highlighted { background: rgba(42,111,168,0.15); }
